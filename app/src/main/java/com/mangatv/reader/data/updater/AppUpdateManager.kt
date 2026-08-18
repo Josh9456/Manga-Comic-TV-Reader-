@@ -26,7 +26,7 @@ data class AppUpdateInfo(
 
 object AppUpdateManager {
 
-    private const val GITHUB_REPO_API = "https://api.github.com/repos/Josh9456/Manga-Comic-TV-Reader-/releases/latest"
+    private const val GITHUB_RELEASES_API = "https://api.github.com/repos/Josh9456/Manga-Comic-TV-Reader-/releases"
 
     fun getCurrentVersion(context: Context): String {
         return try {
@@ -45,46 +45,60 @@ object AppUpdateManager {
     suspend fun checkForUpdates(context: Context): Result<AppUpdateInfo> = withContext(Dispatchers.IO) {
         try {
             val currentVersion = getCurrentVersion(context)
-            val url = URL(GITHUB_REPO_API)
+            val url = URL(GITHUB_RELEASES_API)
             val connection = (url.openConnection() as HttpURLConnection).apply {
                 requestMethod = "GET"
                 setRequestProperty("Accept", "application/vnd.github.v3+json")
                 setRequestProperty("User-Agent", "MangaTV-AppUpdateManager")
-                connectTimeout = 8000
-                readTimeout = 8000
+                connectTimeout = 10000
+                readTimeout = 10000
             }
 
             if (connection.responseCode != HttpURLConnection.HTTP_OK) {
-                return@withContext Result.failure(Exception("HTTP error ${connection.responseCode} while checking GitHub releases"))
+                return@withContext Result.failure(Exception("GitHub API returned status ${connection.responseCode}"))
             }
 
             val jsonString = connection.inputStream.bufferedReader().use { it.readText() }
-            val root = JSONObject(jsonString)
+            val releasesArray = org.json.JSONArray(jsonString)
 
-            val tagName = root.optString("tag_name", "").trim()
-            val releaseTitle = root.optString("name", tagName)
-            val releaseNotes = root.optString("body", "")
+            if (releasesArray.length() == 0) {
+                return@withContext Result.failure(Exception("No releases found on GitHub repository"))
+            }
 
+            var targetRelease: JSONObject? = null
             var downloadUrl: String? = null
             var apkFileName: String? = null
 
-            val assets = root.optJSONArray("assets")
-            if (assets != null) {
-                for (i in 0 until assets.length()) {
-                    val asset = assets.getJSONObject(i)
-                    val name = asset.optString("name", "")
-                    if (name.endsWith(".apk", ignoreCase = true)) {
-                        downloadUrl = asset.optString("browser_download_url")
-                        apkFileName = name
-                        break
+            // Find the most recent release that has an APK uploaded
+            for (i in 0 until releasesArray.length()) {
+                val release = releasesArray.getJSONObject(i)
+                val assets = release.optJSONArray("assets")
+                if (assets != null && assets.length() > 0) {
+                    for (j in 0 until assets.length()) {
+                        val asset = assets.getJSONObject(j)
+                        val name = asset.optString("name", "")
+                        if (name.endsWith(".apk", ignoreCase = true)) {
+                            targetRelease = release
+                            downloadUrl = asset.optString("browser_download_url")
+                            apkFileName = name
+                            break
+                        }
                     }
                 }
+                if (targetRelease != null) break
             }
+
+            if (targetRelease == null) {
+                targetRelease = releasesArray.getJSONObject(0)
+            }
+
+            val tagName = targetRelease.optString("tag_name", "").trim()
+            val releaseTitle = targetRelease.optString("name", tagName)
+            val releaseNotes = targetRelease.optString("body", "")
 
             val cleanLatest = tagName.removePrefix("v").trim()
             val cleanCurrent = currentVersion.removePrefix("v").trim()
 
-            // Update is available if version string differs or isn't equal
             val isAvailable = cleanLatest.isNotEmpty() && cleanLatest != cleanCurrent && downloadUrl != null
 
             Result.success(
