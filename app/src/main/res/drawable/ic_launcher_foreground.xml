@@ -1,0 +1,24 @@
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+    <!-- Book open icon -->
+    <path
+        android:fillColor="#00E5FF"
+        android:pathData="M28,32 L50,26 L50,78 L28,84 Z"/>
+    <path
+        android:fillColor="#64FFDA"
+        android:pathData="M54,26 L76,32 L76,84 L54,78 Z"/>
+    <!-- Page lines -->
+    <path
+        android:strokeColor="#0B0E14"
+        android:strokeWidth="2.5"
+        android:strokeLineCap="round"
+        android:pathData="M34,42 L46,39 M34,54 L46,51 M34,66 L46,63"/>
+    <path
+        android:strokeColor="#0B0E14"
+        android:strokeWidth="2.5"
+        android:strokeLineCap="round"
+        android:pathData="M58,39 L70,42 M58,51 L70,54 M58,63 L70,66"/>
+</vector>

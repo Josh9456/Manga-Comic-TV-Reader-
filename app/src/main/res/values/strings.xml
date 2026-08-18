@@ -1,0 +1,21 @@
+<resources>
+    <string name="app_name">MangaTV Reader</string>
+    <string name="library_title">Manga &amp; Comics</string>
+    <string name="file_manager_title">Storage &amp; Shares</string>
+    <string name="settings_title">TV Settings</string>
+    
+    <!-- Reader strings -->
+    <string name="page_counter">Page %1$d / %2$d</string>
+    <string name="next_volume_title">End of Chapter</string>
+    <string name="next_volume_prompt">Press OK or Next to open next volume</string>
+    <string name="mode_rtl">Manga (RTL)</string>
+    <string name="mode_ltr">Comic (LTR)</string>
+    <string name="mode_webtoon">Webtoon (Scroll)</string>
+    
+    <!-- Aspect Modes -->
+    <string name="aspect_fit_screen">Fit Screen</string>
+    <string name="aspect_fit_width">Fit Width</string>
+    <string name="aspect_fit_height">Fit Height</string>
+    <string name="aspect_original">Original 1:1</string>
+    <string name="aspect_stretch">Stretch</string>
+</resources>
