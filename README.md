@@ -56,6 +56,7 @@
 * **SMB (Samba / Windows Share v2/v3)**: Connect to your home NAS (Synology, TrueNAS, Unraid) or PC shared folders to stream archives across your local network without copying them to TV storage.
 * **Dynamic Cover Extraction**: Background decoders extract and cache front covers and `ComicInfo.xml` metadata on the fly.
 * **Reading Progress Tracking**: Visual state badges (`Unread`, `In Progress (Page X/Y)`, `Completed`) with automatic progress bookmarking and instant "Next Chapter / Volume" prompts when finishing a book.
+* **🔄 One-Click In-App Updater**: Check for updates and download & install new releases directly from GitHub Releases without needing a computer or sideloading tools.
 
 ### 🎮 On-Screen Display (OSD)
 * Press **OK / Select** at any time while reading to open the OSD:
@@ -77,7 +78,20 @@
 
 ---
 
-## 🚀 How to Install / Sideload on Android TV & Google TV
+## 🔄 Updating Manga TV (In-App)
+
+Once Manga TV is installed on your Android TV or Google TV, you **never need to sideload future updates manually**!
+
+1. Open **Manga TV** on your television.
+2. Select the **Settings** tab in the top navigation bar.
+3. Under the **App Updates (GitHub)** card, click **Check for Updates**.
+4. When a new version is detected, click **Install vX.X.X**.
+5. The app will download the release APK with a live progress bar and automatically launch the Android TV package installer.
+6. Click **Update** on your TV screen with your remote, and your app will be updated instantly!
+
+---
+
+## 🚀 Initial Installation / Sideloading Guide
 
 ### 📥 Step 1: Download the APK
 Download the latest pre-compiled APK directly from the **[GitHub Releases Page](https://github.com/Josh9456/Manga-Comic-TV-Reader-/releases)**:
