@@ -2,9 +2,7 @@ package com.mangatv.reader.ui.reader
 
 import android.view.KeyEvent
 import androidx.activity.compose.BackHandler
-import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.animation.core.CubicBezierEasing
 import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.animateFloatAsState
@@ -12,11 +10,6 @@ import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
-import androidx.compose.animation.slideInHorizontally
-import androidx.compose.animation.slideInVertically
-import androidx.compose.animation.slideOutHorizontally
-import androidx.compose.animation.slideOutVertically
-import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.focusable
@@ -28,6 +21,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.CircularProgressIndicator
 import androidx.compose.material.icons.Icons
@@ -39,6 +33,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clipToBounds
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.Color
@@ -46,6 +41,7 @@ import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.key.onKeyEvent
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -188,6 +184,10 @@ fun TvComicReaderScreen(
             label = "zoom"
         )
 
+        val density = LocalDensity.current
+        val contentWidthDp = with(density) { baseContentWidth.toDp() }
+        val contentHeightDp = with(density) { baseContentHeight.toDp() }
+
         Box(
             modifier = Modifier
                 .fillMaxSize()
@@ -313,111 +313,60 @@ fun TvComicReaderScreen(
                     }
                 }
         ) {
-            // Render Comic Page Image Container with AnimatedContent Transitions
+            // Render Comic Page Image Container (instant, zero-latency, full unclipped canvas)
             if (bitmap != null) {
-                val contentScale = when (uiState.aspectMode) {
-                    AspectRatioMode.FIT_SCREEN -> ContentScale.Fit
-                    AspectRatioMode.FIT_WIDTH -> ContentScale.FillWidth
-                    AspectRatioMode.FIT_HEIGHT -> ContentScale.FillHeight
-                    AspectRatioMode.ORIGINAL -> ContentScale.None
-                    AspectRatioMode.STRETCH -> ContentScale.FillBounds
-                }
-
                 Box(
                     modifier = Modifier
                         .fillMaxSize()
-                        .graphicsLayer {
-                            scaleX = animatedZoom
-                            scaleY = animatedZoom
-                            translationX = animatedPanX
-                            translationY = animatedPanY
-                        },
+                        .clipToBounds(),
                     contentAlignment = Alignment.Center
                 ) {
-                    AnimatedContent(
-                        targetState = uiState.currentPageIndex to (uiState.isCurrentSpreadDual && uiState.secondaryBitmap != null),
-                        transitionSpec = {
-                            val forward = uiState.navDirection == NavDirection.FORWARD
-                            val backward = uiState.navDirection == NavDirection.BACKWARD
-                            val animDuration = 360
-                            val fadeDuration = 320
-                            val smoothEasing = CubicBezierEasing(0.25f, 0.1f, 0.25f, 1.0f)
-
-                            if (uiState.readingMode == ReadingMode.WEBTOON) {
-                                if (forward) {
-                                    (slideInVertically(animationSpec = tween(animDuration, easing = smoothEasing)) { it / 14 } + fadeIn(animationSpec = tween(fadeDuration)))
-                                        .togetherWith(slideOutVertically(animationSpec = tween(animDuration, easing = smoothEasing)) { -it / 18 } + fadeOut(animationSpec = tween(fadeDuration)))
-                                } else if (backward) {
-                                    (slideInVertically(animationSpec = tween(animDuration, easing = smoothEasing)) { -it / 14 } + fadeIn(animationSpec = tween(fadeDuration)))
-                                        .togetherWith(slideOutVertically(animationSpec = tween(animDuration, easing = smoothEasing)) { it / 18 } + fadeOut(animationSpec = tween(fadeDuration)))
-                                } else {
-                                    fadeIn(animationSpec = tween(fadeDuration)).togetherWith(fadeOut(animationSpec = tween(fadeDuration)))
-                                }
-                            } else if (uiState.readingMode == ReadingMode.RTL) {
-                                // Manga Mode (RTL): Next page drifts softly from LEFT to RIGHT
-                                if (forward) {
-                                    (slideInHorizontally(animationSpec = tween(animDuration, easing = smoothEasing)) { -it / 14 } + fadeIn(animationSpec = tween(fadeDuration)))
-                                        .togetherWith(slideOutHorizontally(animationSpec = tween(animDuration, easing = smoothEasing)) { it / 18 } + fadeOut(animationSpec = tween(fadeDuration)))
-                                } else if (backward) {
-                                    (slideInHorizontally(animationSpec = tween(animDuration, easing = smoothEasing)) { it / 14 } + fadeIn(animationSpec = tween(fadeDuration)))
-                                        .togetherWith(slideOutHorizontally(animationSpec = tween(animDuration, easing = smoothEasing)) { -it / 18 } + fadeOut(animationSpec = tween(fadeDuration)))
-                                } else {
-                                    fadeIn(animationSpec = tween(fadeDuration)).togetherWith(fadeOut(animationSpec = tween(fadeDuration)))
-                                }
+                    Box(
+                        modifier = Modifier
+                            .size(contentWidthDp, contentHeightDp)
+                            .graphicsLayer {
+                                scaleX = animatedZoom
+                                scaleY = animatedZoom
+                                translationX = animatedPanX
+                                translationY = animatedPanY
+                            },
+                        contentAlignment = Alignment.Center
+                    ) {
+                        if (isDual && secBmp != null) {
+                            val (leftBmp, rightBmp) = if (uiState.readingMode == ReadingMode.RTL) {
+                                secBmp to bitmap
                             } else {
-                                // Comic Mode (LTR): Next page drifts softly from RIGHT to LEFT
-                                if (forward) {
-                                    (slideInHorizontally(animationSpec = tween(animDuration, easing = smoothEasing)) { it / 14 } + fadeIn(animationSpec = tween(fadeDuration)))
-                                        .togetherWith(slideOutHorizontally(animationSpec = tween(animDuration, easing = smoothEasing)) { -it / 18 } + fadeOut(animationSpec = tween(fadeDuration)))
-                                } else if (backward) {
-                                    (slideInHorizontally(animationSpec = tween(animDuration, easing = smoothEasing)) { -it / 14 } + fadeIn(animationSpec = tween(fadeDuration)))
-                                        .togetherWith(slideOutHorizontally(animationSpec = tween(animDuration, easing = smoothEasing)) { it / 18 } + fadeOut(animationSpec = tween(fadeDuration)))
-                                } else {
-                                    fadeIn(animationSpec = tween(fadeDuration)).togetherWith(fadeOut(animationSpec = tween(fadeDuration)))
-                                }
+                                bitmap to secBmp
                             }
-                        },
-                        label = "pageTransition"
-                    ) { (pageIndex, isDualSpread) ->
-                        val pageBitmap = uiState.currentBitmap
-                        val secPageBitmap = uiState.secondaryBitmap
-                        if (pageBitmap != null) {
-                            if (isDualSpread && secPageBitmap != null) {
-                                val (leftBmp, rightBmp) = if (uiState.readingMode == ReadingMode.RTL) {
-                                    secPageBitmap to pageBitmap
-                                } else {
-                                    pageBitmap to secPageBitmap
-                                }
-                                Row(
-                                    modifier = Modifier.fillMaxSize(),
-                                    horizontalArrangement = Arrangement.Center,
-                                    verticalAlignment = Alignment.CenterVertically
-                                ) {
-                                    Image(
-                                        bitmap = leftBmp.asImageBitmap(),
-                                        contentDescription = "Left Page",
-                                        contentScale = contentScale,
-                                        modifier = Modifier
-                                            .weight(1f)
-                                            .fillMaxHeight()
-                                    )
-                                    Image(
-                                        bitmap = rightBmp.asImageBitmap(),
-                                        contentDescription = "Right Page",
-                                        contentScale = contentScale,
-                                        modifier = Modifier
-                                            .weight(1f)
-                                            .fillMaxHeight()
-                                    )
-                                }
-                            } else {
+                            Row(
+                                modifier = Modifier.fillMaxSize(),
+                                horizontalArrangement = Arrangement.Center,
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
                                 Image(
-                                    bitmap = pageBitmap.asImageBitmap(),
-                                    contentDescription = "Page ${pageIndex + 1}",
-                                    contentScale = contentScale,
-                                    modifier = Modifier.fillMaxSize()
+                                    bitmap = leftBmp.asImageBitmap(),
+                                    contentDescription = "Left Page",
+                                    contentScale = ContentScale.FillBounds,
+                                    modifier = Modifier
+                                        .weight(1f)
+                                        .fillMaxHeight()
+                                )
+                                Image(
+                                    bitmap = rightBmp.asImageBitmap(),
+                                    contentDescription = "Right Page",
+                                    contentScale = ContentScale.FillBounds,
+                                    modifier = Modifier
+                                        .weight(1f)
+                                        .fillMaxHeight()
                                 )
                             }
+                        } else {
+                            Image(
+                                bitmap = bitmap.asImageBitmap(),
+                                contentDescription = "Page ${uiState.currentPageIndex + 1}",
+                                contentScale = ContentScale.FillBounds,
+                                modifier = Modifier.fillMaxSize()
+                            )
                         }
                     }
                 }
