@@ -21,6 +21,12 @@ import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import java.io.File
 
+enum class NavDirection {
+    FORWARD,
+    BACKWARD,
+    NONE
+}
+
 data class ReaderUiState(
     val filePath: String = "",
     val title: String = "",
@@ -42,6 +48,8 @@ data class ReaderUiState(
     val comicInfo: ComicInfoMetadata? = null,
     val panOffsetY: Float = 0f,
     val panOffsetX: Float = 0f,
+    val zoomScale: Float = 1.0f,
+    val navDirection: NavDirection = NavDirection.NONE,
     val isLoading: Boolean = true
 )
 
@@ -235,7 +243,10 @@ class TvComicReaderViewModel(application: Application) : AndroidViewModel(applic
         if (nextIndex < total) {
             _uiState.value = _uiState.value.copy(
                 currentPageIndex = nextIndex,
-                isAtEndPromptVisible = false
+                isAtEndPromptVisible = false,
+                navDirection = NavDirection.FORWARD,
+                panOffsetX = 0f,
+                panOffsetY = 0f
             )
             cacheEngine?.updateCurrentPosition(nextIndex, readingForward = true)
             loadCurrentBitmap(nextIndex)
@@ -245,7 +256,10 @@ class TvComicReaderViewModel(application: Application) : AndroidViewModel(applic
             val finalIndex = total - 1
             _uiState.value = _uiState.value.copy(
                 currentPageIndex = finalIndex,
-                isAtEndPromptVisible = false
+                isAtEndPromptVisible = false,
+                navDirection = NavDirection.FORWARD,
+                panOffsetX = 0f,
+                panOffsetY = 0f
             )
             cacheEngine?.updateCurrentPosition(finalIndex, readingForward = true)
             loadCurrentBitmap(finalIndex)
@@ -278,7 +292,10 @@ class TvComicReaderViewModel(application: Application) : AndroidViewModel(applic
 
         _uiState.value = _uiState.value.copy(
             currentPageIndex = prevIndex,
-            isAtEndPromptVisible = false
+            isAtEndPromptVisible = false,
+            navDirection = NavDirection.BACKWARD,
+            panOffsetX = 0f,
+            panOffsetY = 0f
         )
         cacheEngine?.updateCurrentPosition(prevIndex, readingForward = false)
         loadCurrentBitmap(prevIndex)
@@ -287,11 +304,16 @@ class TvComicReaderViewModel(application: Application) : AndroidViewModel(applic
 
     fun jumpToPage(targetPage: Int) {
         resetIdleTimer()
+        val current = _uiState.value.currentPageIndex
         val total = _uiState.value.totalPages
         val target = targetPage.coerceIn(0, total - 1)
+        val dir = if (target > current) NavDirection.FORWARD else if (target < current) NavDirection.BACKWARD else NavDirection.NONE
         _uiState.value = _uiState.value.copy(
             currentPageIndex = target,
-            isAtEndPromptVisible = false
+            isAtEndPromptVisible = false,
+            navDirection = dir,
+            panOffsetX = 0f,
+            panOffsetY = 0f
         )
         cacheEngine?.updateCurrentPosition(target)
         loadCurrentBitmap(target)
@@ -302,18 +324,64 @@ class TvComicReaderViewModel(application: Application) : AndroidViewModel(applic
         jumpToPage(_uiState.value.currentPageIndex + delta)
     }
 
-    fun panVertical(deltaY: Float) {
+    fun panVertical(deltaY: Float, maxPanY: Float = Float.MAX_VALUE) {
         resetIdleTimer()
-        _uiState.value = _uiState.value.copy(
-            panOffsetY = _uiState.value.panOffsetY + deltaY
-        )
+        val currentY = _uiState.value.panOffsetY
+        val newY = (currentY + deltaY).coerceIn(-maxPanY, maxPanY)
+        _uiState.value = _uiState.value.copy(panOffsetY = newY)
     }
 
-    fun panHorizontal(deltaX: Float) {
+    fun panHorizontal(deltaX: Float, maxPanX: Float = Float.MAX_VALUE) {
         resetIdleTimer()
-        _uiState.value = _uiState.value.copy(
-            panOffsetX = _uiState.value.panOffsetX + deltaX
-        )
+        val currentX = _uiState.value.panOffsetX
+        val newX = (currentX + deltaX).coerceIn(-maxPanX, maxPanX)
+        _uiState.value = _uiState.value.copy(panOffsetX = newX)
+    }
+
+    fun panBy(deltaX: Float, deltaY: Float, maxPanX: Float, maxPanY: Float) {
+        resetIdleTimer()
+        val currentX = _uiState.value.panOffsetX
+        val currentY = _uiState.value.panOffsetY
+        val newX = if (maxPanX > 0f) (currentX + deltaX).coerceIn(-maxPanX, maxPanX) else 0f
+        val newY = if (maxPanY > 0f) (currentY + deltaY).coerceIn(-maxPanY, maxPanY) else 0f
+        _uiState.value = _uiState.value.copy(panOffsetX = newX, panOffsetY = newY)
+    }
+
+    fun setZoomScale(scale: Float) {
+        resetIdleTimer()
+        val clamped = scale.coerceIn(1.0f, 3.0f)
+        if (clamped == 1.0f) {
+            _uiState.value = _uiState.value.copy(zoomScale = clamped, panOffsetX = 0f, panOffsetY = 0f)
+        } else {
+            _uiState.value = _uiState.value.copy(zoomScale = clamped)
+        }
+    }
+
+    fun zoomIn() {
+        val current = _uiState.value.zoomScale
+        val next = when {
+            current < 1.25f -> 1.25f
+            current < 1.5f -> 1.5f
+            current < 2.0f -> 2.0f
+            current < 3.0f -> 3.0f
+            else -> 3.0f
+        }
+        setZoomScale(next)
+    }
+
+    fun zoomOut() {
+        val current = _uiState.value.zoomScale
+        val next = when {
+            current > 2.0f -> 2.0f
+            current > 1.5f -> 1.5f
+            current > 1.25f -> 1.25f
+            else -> 1.0f
+        }
+        setZoomScale(next)
+    }
+
+    fun resetZoomAndPan() {
+        _uiState.value = _uiState.value.copy(zoomScale = 1.0f, panOffsetX = 0f, panOffsetY = 0f)
     }
 
     fun toggleOsd() {
@@ -331,7 +399,7 @@ class TvComicReaderViewModel(application: Application) : AndroidViewModel(applic
     }
 
     fun setAspectRatio(aspect: AspectRatioMode) {
-        _uiState.value = _uiState.value.copy(aspectMode = aspect, panOffsetY = 0f, panOffsetX = 0f)
+        _uiState.value = _uiState.value.copy(aspectMode = aspect, panOffsetY = 0f, panOffsetX = 0f, zoomScale = 1.0f)
         saveCurrentProgress()
     }
 

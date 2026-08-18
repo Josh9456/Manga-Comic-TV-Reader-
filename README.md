@@ -30,16 +30,21 @@
 * **Overscan & Safe Area Calibration**: Adjustable TV margin safety padding (0%, 3%, 5%, 8%) to prevent screen edge cropping on older television sets.
 
 ### 📖 Reading Engines & Layouts
+* **Smooth Page-Turn Transitions**: Direction-aware, hardware-accelerated animated transitions (`slide + fade`) tailored for Manga (RTL) vs Comic (LTR) reading directions.
+* **Smart D-Pad Panning & Navigation**:
+  * Seamlessly scroll around zoomed, stretched, or tall pages (`Fit Width`, `Original 1:1`) using D-Pad Up/Down/Left/Right.
+  * Boundary-aware clamping keeps pages centered and advances to next/previous pages when horizontal bounds are met.
+* **Zoom Multipliers**: Quick zoom presets (`1.0x`, `1.25x`, `1.5x`, `2.0x`, `3.0x`) in the OSD with transient viewport mini-map indicators.
 * **Reading Directions**:
   * **Manga Mode (Right-to-Left / RTL)**: Right arrow advances to next page; Left arrow goes back.
   * **Comic Mode (Left-to-Right / LTR)**: Left arrow advances to next page; Right arrow goes back.
   * **Webtoon Mode**: Continuous vertical flow for long-strip manhwa/webtoons.
 * **Display & Aspect Ratio Modes**:
   * **Fit Screen (Default)**: Preserves original aspect ratio with clean letterboxing / pillarboxing.
-  * **Fit Width**: Scales page width to TV screen; enables smooth D-Pad Up/Down panning for tall pages.
+  * **Fit Width**: Scales page width to TV screen; enables smooth D-Pad Up/Down scrolling for tall pages.
   * **Fit Height**: Scales page height to TV screen; enables smooth D-Pad Left/Right panning for wide pages.
   * **Original (1:1)**: Scan resolution display with full 2D D-pad directional panning.
-  * **Stretch**: Fills entire 16:9 display.
+  * **Stretch**: Fills entire 16:9 display with full panning capability.
 * **Dual-Page & Spread Modes**: Seamlessly toggle between single-page view and dual-page side-by-side spread layouts.
 * **Smart Auto-Crop (Margin Trimming)**: Automatically analyzes and crops blank scanner borders (white/black margins) to maximize artwork real estate on large screens.
 * **Slideshow Auto-Advance**: Configurable hands-free automatic page turning (5s, 8s, 10s, 15s intervals).
@@ -55,7 +60,7 @@
 ### 🎮 On-Screen Display (OSD)
 * Press **OK / Select** at any time while reading to open the OSD:
   * **Live Thumbnail Seekbar**: Scrub through pages with real-time thumbnail previews.
-  * **Quick Controls**: Instant switching of reading direction, aspect ratio mode, and spread layouts.
+  * **Quick Controls**: Instant switching of reading direction, aspect ratio mode, zoom multiplier, spread layouts, and auto-crop.
   * **Metadata Viewer**: View synopsis, series name, issue number, author, artist, and publisher details parsed from `ComicInfo.xml`.
 
 ---

@@ -31,6 +31,7 @@ import androidx.compose.material.icons.filled.MenuBook
 import androidx.compose.material.icons.filled.Pause
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.SwapHoriz
+import androidx.compose.material.icons.filled.ZoomIn
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
@@ -75,6 +76,7 @@ fun TvReaderOsdOverlay(
     aspectRatioMode: AspectRatioMode,
     spreadMode: com.mangatv.reader.domain.model.PageSpreadMode = com.mangatv.reader.domain.model.PageSpreadMode.DUAL_PAGE,
     isDualSpread: Boolean = false,
+    zoomScale: Float = 1.0f,
     isAutoCrop: Boolean,
     isSlideshow: Boolean,
     onPrevPage: () -> Unit,
@@ -83,6 +85,7 @@ fun TvReaderOsdOverlay(
     onJumpTenForward: () -> Unit,
     onToggleReadingMode: () -> Unit,
     onCycleAspectRatio: () -> Unit,
+    onCycleZoom: () -> Unit = {},
     onToggleSpreadMode: () -> Unit,
     onToggleAutoCrop: () -> Unit,
     onToggleSlideshow: () -> Unit,
@@ -243,6 +246,13 @@ fun TvReaderOsdOverlay(
                         isActive = true,
                         modifier = if (initialFocusRequester != null) Modifier.focusRequester(initialFocusRequester) else Modifier,
                         onClick = onCycleAspectRatio
+                    )
+                    Spacer(modifier = Modifier.width(12.dp))
+                    OsdActionButton(
+                        title = if (zoomScale == 1.0f) "Zoom: 1.0x" else "Zoom: ${"%.2f".format(zoomScale).trimEnd('0').trimEnd('.')}x",
+                        icon = Icons.Default.ZoomIn,
+                        isActive = zoomScale > 1.0f,
+                        onClick = onCycleZoom
                     )
                     Spacer(modifier = Modifier.width(12.dp))
                     OsdActionButton(
