@@ -175,8 +175,8 @@ On first launch, Manga TV will request **All Files Access** (`MANAGE_EXTERNAL_ST
 ### Build Commands
 ```bash
 # Clone the repository
-git clone git@github.com:Josh9456/Manga-TV.git
-cd Manga-TV
+git clone git@github.com:Josh9456/Manga-Comic-TV-Reader-.git
+cd Manga-Comic-TV-Reader-
 
 # Build debug APK
 ./gradlew assembleDebug
