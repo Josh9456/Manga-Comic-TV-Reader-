@@ -210,6 +210,7 @@ fun TvReaderOsdOverlay(
                     OsdActionButton(
                         title = "Next",
                         icon = Icons.Default.MenuBook,
+                        modifier = if (initialFocusRequester != null) Modifier.focusRequester(initialFocusRequester) else Modifier,
                         onClick = onNextPage
                     )
                     Spacer(modifier = Modifier.width(12.dp))
@@ -223,7 +224,7 @@ fun TvReaderOsdOverlay(
                 // Feature Controls: Mode / Spread / Aspect / Auto-Crop / Slideshow
                 Row(
                     modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.Center,
+                    horizontalArrangement = Arrangement.spacedBy(10.dp, Alignment.CenterHorizontally),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     OsdActionButton(
@@ -232,38 +233,32 @@ fun TvReaderOsdOverlay(
                         isActive = true,
                         onClick = onToggleReadingMode
                     )
-                    Spacer(modifier = Modifier.width(12.dp))
                     OsdActionButton(
-                        title = "Spread: ${spreadMode.displayName}",
+                        title = if (spreadMode == com.mangatv.reader.domain.model.PageSpreadMode.DUAL_PAGE) "Dual Spread" else "Single Page",
                         icon = Icons.Default.AutoStories,
                         isActive = (spreadMode == com.mangatv.reader.domain.model.PageSpreadMode.DUAL_PAGE),
                         onClick = onToggleSpreadMode
                     )
-                    Spacer(modifier = Modifier.width(12.dp))
                     OsdActionButton(
                         title = aspectRatioMode.displayName,
                         icon = Icons.Default.AspectRatio,
                         isActive = true,
-                        modifier = if (initialFocusRequester != null) Modifier.focusRequester(initialFocusRequester) else Modifier,
                         onClick = onCycleAspectRatio
                     )
-                    Spacer(modifier = Modifier.width(12.dp))
                     OsdActionButton(
                         title = if (zoomScale == 1.0f) "Zoom: 1.0x" else "Zoom: ${"%.2f".format(zoomScale).trimEnd('0').trimEnd('.')}x",
                         icon = Icons.Default.ZoomIn,
                         isActive = zoomScale > 1.0f,
                         onClick = onCycleZoom
                     )
-                    Spacer(modifier = Modifier.width(12.dp))
                     OsdActionButton(
                         title = if (isAutoCrop) "Auto-Crop: ON" else "Auto-Crop: OFF",
                         icon = Icons.Default.Crop,
                         isActive = isAutoCrop,
                         onClick = onToggleAutoCrop
                     )
-                    Spacer(modifier = Modifier.width(12.dp))
                     OsdActionButton(
-                        title = if (isSlideshow) "Slideshow (Pause)" else "Slideshow (Play)",
+                        title = if (isSlideshow) "Slideshow: ON" else "Slideshow: OFF",
                         icon = if (isSlideshow) Icons.Default.Pause else Icons.Default.PlayArrow,
                         isActive = isSlideshow,
                         onClick = onToggleSlideshow
@@ -301,7 +296,7 @@ private fun OsdActionButton(
         interactionSource = interactionSource
     ) {
         Row(
-            modifier = Modifier.padding(horizontal = 14.dp, vertical = 8.dp),
+            modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(6.dp)
         ) {
@@ -309,12 +304,14 @@ private fun OsdActionButton(
                 imageVector = icon,
                 contentDescription = title,
                 tint = if (isFocused) TextDark else if (isActive) AccentCyan else TextWhite,
-                modifier = Modifier.size(18.dp)
+                modifier = Modifier.size(16.dp)
             )
             Text(
                 text = title,
+                maxLines = 1,
+                softWrap = false,
                 style = MaterialTheme.typography.labelLarge.copy(
-                    fontSize = 14.sp,
+                    fontSize = 13.sp,
                     color = if (isFocused) TextDark else TextWhite,
                     fontWeight = FontWeight.SemiBold
                 )

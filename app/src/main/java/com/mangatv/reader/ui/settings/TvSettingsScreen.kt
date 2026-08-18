@@ -5,23 +5,32 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.Download
+import androidx.compose.material.icons.filled.Refresh
+import androidx.compose.material.icons.filled.SystemUpdate
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -30,6 +39,8 @@ import androidx.tv.material3.ButtonDefaults
 import androidx.tv.material3.Icon
 import androidx.tv.material3.MaterialTheme
 import androidx.tv.material3.Text
+import com.mangatv.reader.data.updater.AppUpdateInfo
+import com.mangatv.reader.data.updater.AppUpdateManager
 import com.mangatv.reader.domain.model.ReadingMode
 import com.mangatv.reader.ui.components.TvNavTab
 import com.mangatv.reader.ui.components.TvSafeAreaBox
@@ -42,16 +53,28 @@ import com.mangatv.reader.ui.theme.CinemaSurfaceVariant
 import com.mangatv.reader.ui.theme.TextDark
 import com.mangatv.reader.ui.theme.TextMuted
 import com.mangatv.reader.ui.theme.TextWhite
+import kotlinx.coroutines.launch
 
 @Composable
 fun TvSettingsScreen(
     onNavigateToTab: (TvNavTab) -> Unit
 ) {
+    val context = LocalContext.current
+    val coroutineScope = rememberCoroutineScope()
+
     var defaultReadingMode by remember { mutableStateOf(ReadingMode.RTL) }
     var overscanPercent by remember { mutableFloatStateOf(0.03f) }
     var slideshowInterval by remember { mutableIntStateOf(8) }
     var autoCropEnabled by remember { mutableStateOf(false) }
     var cacheClearedMessage by remember { mutableStateOf<String?>(null) }
+
+    // GitHub Updates State
+    val currentVersion = remember { AppUpdateManager.getCurrentVersion(context) }
+    var isCheckingUpdate by remember { mutableStateOf(false) }
+    var isDownloadingUpdate by remember { mutableStateOf(false) }
+    var downloadProgress by remember { mutableIntStateOf(0) }
+    var updateInfo by remember { mutableStateOf<AppUpdateInfo?>(null) }
+    var updateStatusMessage by remember { mutableStateOf<String?>(null) }
 
     TvSafeAreaBox(overscanHorizontalPercent = overscanPercent, overscanVerticalPercent = overscanPercent) {
         Column(modifier = Modifier.fillMaxSize()) {
@@ -73,6 +96,128 @@ fun TvSettingsScreen(
                 modifier = Modifier.fillMaxSize(),
                 verticalArrangement = Arrangement.spacedBy(14.dp)
             ) {
+                // GitHub In-App Updates Card
+                item {
+                    SettingsCard(
+                        title = "App Updates (GitHub)",
+                        description = updateStatusMessage
+                            ?: if (updateInfo?.isUpdateAvailable == true) {
+                                "New version v${updateInfo?.latestVersion} available! Click below to download and install automatically."
+                            } else {
+                                "Current Version: v$currentVersion • Automatically checks for new APK updates from GitHub releases."
+                            }
+                    ) {
+                        when {
+                            isDownloadingUpdate -> {
+                                Column(horizontalAlignment = Alignment.End) {
+                                    Text(
+                                        text = "Downloading APK: $downloadProgress%",
+                                        style = MaterialTheme.typography.labelMedium.copy(
+                                            color = AccentCyan,
+                                            fontWeight = FontWeight.Bold
+                                        )
+                                    )
+                                    Spacer(modifier = Modifier.height(4.dp))
+                                    Box(
+                                        modifier = Modifier
+                                            .width(180.dp)
+                                            .height(8.dp)
+                                            .background(CinemaSurfaceVariant, RoundedCornerShape(4.dp))
+                                    ) {
+                                        Box(
+                                            modifier = Modifier
+                                                .fillMaxWidth((downloadProgress / 100f).coerceIn(0f, 1f))
+                                                .height(8.dp)
+                                                .background(AccentCyan, RoundedCornerShape(4.dp))
+                                        )
+                                    }
+                                }
+                            }
+                            updateInfo?.isUpdateAvailable == true && updateInfo?.downloadUrl != null -> {
+                                Button(
+                                    onClick = {
+                                        val url = updateInfo?.downloadUrl ?: return@Button
+                                        val name = updateInfo?.apkFileName ?: "MangaTV-v${updateInfo?.latestVersion}.apk"
+                                        isDownloadingUpdate = true
+                                        downloadProgress = 0
+                                        coroutineScope.launch {
+                                            val result = AppUpdateManager.downloadAndInstallApk(
+                                                context = context,
+                                                downloadUrl = url,
+                                                fileName = name,
+                                                onProgress = { pct -> downloadProgress = pct }
+                                            )
+                                            isDownloadingUpdate = false
+                                            if (result.isFailure) {
+                                                updateStatusMessage = "Download failed: ${result.exceptionOrNull()?.localizedMessage}"
+                                            }
+                                        }
+                                    },
+                                    colors = ButtonDefaults.colors(
+                                        containerColor = AccentCyan,
+                                        focusedContainerColor = AccentTeal
+                                    )
+                                ) {
+                                    Row(
+                                        verticalAlignment = Alignment.CenterVertically,
+                                        horizontalArrangement = Arrangement.spacedBy(6.dp)
+                                    ) {
+                                        Icon(Icons.Default.Download, contentDescription = null, tint = TextDark, modifier = Modifier.size(18.dp))
+                                        Text(
+                                            text = "Install v${updateInfo?.latestVersion}",
+                                            color = TextDark,
+                                            fontWeight = FontWeight.Bold
+                                        )
+                                    }
+                                }
+                            }
+                            else -> {
+                                Button(
+                                    onClick = {
+                                        isCheckingUpdate = true
+                                        updateStatusMessage = "Checking GitHub Releases..."
+                                        coroutineScope.launch {
+                                            val result = AppUpdateManager.checkForUpdates(context)
+                                            isCheckingUpdate = false
+                                            result.onSuccess { info ->
+                                                updateInfo = info
+                                                if (info.isUpdateAvailable) {
+                                                    updateStatusMessage = "Update found: v${info.latestVersion}! Ready to install."
+                                                } else {
+                                                    updateStatusMessage = "You are on the latest version (v$currentVersion)."
+                                                }
+                                            }.onFailure { error ->
+                                                updateStatusMessage = "Check failed: ${error.localizedMessage ?: "Network error"}"
+                                            }
+                                        }
+                                    },
+                                    colors = ButtonDefaults.colors(
+                                        containerColor = CinemaSurfaceVariant,
+                                        focusedContainerColor = AccentCyan
+                                    )
+                                ) {
+                                    Row(
+                                        verticalAlignment = Alignment.CenterVertically,
+                                        horizontalArrangement = Arrangement.spacedBy(6.dp)
+                                    ) {
+                                        Icon(
+                                            imageVector = if (isCheckingUpdate) Icons.Default.Refresh else Icons.Default.SystemUpdate,
+                                            contentDescription = null,
+                                            tint = TextWhite,
+                                            modifier = Modifier.size(18.dp)
+                                        )
+                                        Text(
+                                            text = if (isCheckingUpdate) "Checking..." else "Check for Updates",
+                                            color = TextWhite,
+                                            fontWeight = FontWeight.Bold
+                                        )
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+
                 // TV Safe Area Calibration
                 item {
                     SettingsCard(

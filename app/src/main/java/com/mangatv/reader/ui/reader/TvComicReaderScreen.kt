@@ -4,6 +4,7 @@ import android.view.KeyEvent
 import androidx.activity.compose.BackHandler
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.core.CubicBezierEasing
 import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.animateFloatAsState
@@ -85,6 +86,7 @@ fun TvComicReaderScreen(
 
     LaunchedEffect(uiState.isOsdVisible) {
         if (uiState.isOsdVisible) {
+            kotlinx.coroutines.delay(150)
             try {
                 osdFocusRequester.requestFocus()
             } catch (e: Exception) {
@@ -337,38 +339,41 @@ fun TvComicReaderScreen(
                         transitionSpec = {
                             val forward = uiState.navDirection == NavDirection.FORWARD
                             val backward = uiState.navDirection == NavDirection.BACKWARD
+                            val animDuration = 360
+                            val fadeDuration = 320
+                            val smoothEasing = CubicBezierEasing(0.25f, 0.1f, 0.25f, 1.0f)
 
                             if (uiState.readingMode == ReadingMode.WEBTOON) {
                                 if (forward) {
-                                    (slideInVertically(animationSpec = tween(260, easing = FastOutSlowInEasing)) { it / 2 } + fadeIn(animationSpec = tween(220)))
-                                        .togetherWith(slideOutVertically(animationSpec = tween(260, easing = FastOutSlowInEasing)) { -it / 2 } + fadeOut(animationSpec = tween(200)))
+                                    (slideInVertically(animationSpec = tween(animDuration, easing = smoothEasing)) { it / 14 } + fadeIn(animationSpec = tween(fadeDuration)))
+                                        .togetherWith(slideOutVertically(animationSpec = tween(animDuration, easing = smoothEasing)) { -it / 18 } + fadeOut(animationSpec = tween(fadeDuration)))
                                 } else if (backward) {
-                                    (slideInVertically(animationSpec = tween(260, easing = FastOutSlowInEasing)) { -it / 2 } + fadeIn(animationSpec = tween(220)))
-                                        .togetherWith(slideOutVertically(animationSpec = tween(260, easing = FastOutSlowInEasing)) { it / 2 } + fadeOut(animationSpec = tween(200)))
+                                    (slideInVertically(animationSpec = tween(animDuration, easing = smoothEasing)) { -it / 14 } + fadeIn(animationSpec = tween(fadeDuration)))
+                                        .togetherWith(slideOutVertically(animationSpec = tween(animDuration, easing = smoothEasing)) { it / 18 } + fadeOut(animationSpec = tween(fadeDuration)))
                                 } else {
-                                    fadeIn(animationSpec = tween(200)).togetherWith(fadeOut(animationSpec = tween(200)))
+                                    fadeIn(animationSpec = tween(fadeDuration)).togetherWith(fadeOut(animationSpec = tween(fadeDuration)))
                                 }
                             } else if (uiState.readingMode == ReadingMode.RTL) {
-                                // Manga Mode (RTL): Next page comes from LEFT to RIGHT
+                                // Manga Mode (RTL): Next page drifts softly from LEFT to RIGHT
                                 if (forward) {
-                                    (slideInHorizontally(animationSpec = tween(260, easing = FastOutSlowInEasing)) { -it / 3 } + fadeIn(animationSpec = tween(220)))
-                                        .togetherWith(slideOutHorizontally(animationSpec = tween(260, easing = FastOutSlowInEasing)) { it / 3 } + fadeOut(animationSpec = tween(200)))
+                                    (slideInHorizontally(animationSpec = tween(animDuration, easing = smoothEasing)) { -it / 14 } + fadeIn(animationSpec = tween(fadeDuration)))
+                                        .togetherWith(slideOutHorizontally(animationSpec = tween(animDuration, easing = smoothEasing)) { it / 18 } + fadeOut(animationSpec = tween(fadeDuration)))
                                 } else if (backward) {
-                                    (slideInHorizontally(animationSpec = tween(260, easing = FastOutSlowInEasing)) { it / 3 } + fadeIn(animationSpec = tween(220)))
-                                        .togetherWith(slideOutHorizontally(animationSpec = tween(260, easing = FastOutSlowInEasing)) { -it / 3 } + fadeOut(animationSpec = tween(200)))
+                                    (slideInHorizontally(animationSpec = tween(animDuration, easing = smoothEasing)) { it / 14 } + fadeIn(animationSpec = tween(fadeDuration)))
+                                        .togetherWith(slideOutHorizontally(animationSpec = tween(animDuration, easing = smoothEasing)) { -it / 18 } + fadeOut(animationSpec = tween(fadeDuration)))
                                 } else {
-                                    fadeIn(animationSpec = tween(200)).togetherWith(fadeOut(animationSpec = tween(200)))
+                                    fadeIn(animationSpec = tween(fadeDuration)).togetherWith(fadeOut(animationSpec = tween(fadeDuration)))
                                 }
                             } else {
-                                // Comic Mode (LTR): Next page comes from RIGHT to LEFT
+                                // Comic Mode (LTR): Next page drifts softly from RIGHT to LEFT
                                 if (forward) {
-                                    (slideInHorizontally(animationSpec = tween(260, easing = FastOutSlowInEasing)) { it / 3 } + fadeIn(animationSpec = tween(220)))
-                                        .togetherWith(slideOutHorizontally(animationSpec = tween(260, easing = FastOutSlowInEasing)) { -it / 3 } + fadeOut(animationSpec = tween(200)))
+                                    (slideInHorizontally(animationSpec = tween(animDuration, easing = smoothEasing)) { it / 14 } + fadeIn(animationSpec = tween(fadeDuration)))
+                                        .togetherWith(slideOutHorizontally(animationSpec = tween(animDuration, easing = smoothEasing)) { -it / 18 } + fadeOut(animationSpec = tween(fadeDuration)))
                                 } else if (backward) {
-                                    (slideInHorizontally(animationSpec = tween(260, easing = FastOutSlowInEasing)) { -it / 3 } + fadeIn(animationSpec = tween(220)))
-                                        .togetherWith(slideOutHorizontally(animationSpec = tween(260, easing = FastOutSlowInEasing)) { it / 3 } + fadeOut(animationSpec = tween(200)))
+                                    (slideInHorizontally(animationSpec = tween(animDuration, easing = smoothEasing)) { -it / 14 } + fadeIn(animationSpec = tween(fadeDuration)))
+                                        .togetherWith(slideOutHorizontally(animationSpec = tween(animDuration, easing = smoothEasing)) { it / 18 } + fadeOut(animationSpec = tween(fadeDuration)))
                                 } else {
-                                    fadeIn(animationSpec = tween(200)).togetherWith(fadeOut(animationSpec = tween(200)))
+                                    fadeIn(animationSpec = tween(fadeDuration)).togetherWith(fadeOut(animationSpec = tween(fadeDuration)))
                                 }
                             }
                         },
