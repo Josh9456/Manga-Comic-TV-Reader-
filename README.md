@@ -79,9 +79,13 @@
 
 ## 🚀 How to Install / Sideload on Android TV & Google TV
 
-Because Manga TV is packaged as an Android APK, you can easily load it onto any Android TV, Google TV box, or Fire TV device using one of the methods below.
+### 📥 Step 1: Download the APK
+Download the latest pre-compiled APK directly from the **[GitHub Releases Page](https://github.com/Josh9456/Manga-Comic-TV-Reader-/releases)**:
+* **`Manga-Comic-TV-Reader-1.0.0-beta.apk`** (or latest release APK)
 
-### ⚙️ Step 0: Enable Developer Options & Unknown Sources
+---
+
+### ⚙️ Step 2: Enable Developer Options & Unknown Sources
 1. On your Android TV, go to **Settings** ➔ **System** (or **Device Preferences**) ➔ **About**.
 2. Scroll down to **Android TV OS build** and click the **OK/Select button 7 times** until you see the message *"You are now a developer!"*.
 3. Go back to **Settings** ➔ **Apps** ➔ **Security & Restrictions** (or **Special app access**) ➔ **Install unknown apps**.
@@ -89,30 +93,30 @@ Because Manga TV is packaged as an Android APK, you can easily load it onto any 
 
 ---
 
-### 📲 Method 1: Wireless ADB Sideload (Fastest & Recommended)
+### 📲 Method 1: Wireless ADB Sideload (Fastest for PC Users)
 If you have a computer on the same Wi-Fi network as your TV:
 
 1. On your TV, enable **USB Debugging / Network Debugging** under **Settings** ➔ **System** ➔ **Developer Options**.
 2. Find your TV's IP address under **Settings** ➔ **Network & Internet** (e.g., `192.168.1.50`).
-3. On your computer terminal, connect and install:
+3. Open your terminal in the folder where you downloaded the release APK and run:
    ```bash
    adb connect 192.168.1.50:5555
-   adb install MangaTVReader-debug.apk
+   adb install Manga-Comic-TV-Reader-1.0.0-beta.apk
    ```
-4. Once installed, **Manga TV** will appear directly in your Android TV app row.
+4. Once installed, **Manga TV** will appear directly on your Android TV home screen.
 
 ---
 
 ### 📲 Method 2: Using the "Send Files to TV" (SFTV) App
 1. Install **Send Files to TV** on both your Android TV and your smartphone/PC from Google Play.
 2. Install a file manager on your TV (such as **AnExplorer**, **TV File Commander**, or **FX File Explorer**).
-3. Transfer the `MangaTVReader-debug.apk` file from your phone/PC to your TV using SFTV.
+3. Download the APK from [GitHub Releases](https://github.com/Josh9456/Manga-Comic-TV-Reader-/releases) on your phone/PC and send it to your TV using SFTV.
 4. Open the file manager on your TV, navigate to the `Download` directory, click the APK, and choose **Install**.
 
 ---
 
 ### 📲 Method 3: USB Flash Drive / External Drive
-1. Copy `MangaTVReader-debug.apk` onto a USB flash drive (formatted as FAT32, exFAT, or NTFS).
+1. Download the release APK from [GitHub Releases](https://github.com/Josh9456/Manga-Comic-TV-Reader-/releases) and copy it onto a USB flash drive.
 2. Insert the USB drive into your TV or streaming box USB port.
 3. Open any TV file manager app, locate the USB drive, select the APK, and press **Install**.
 
@@ -120,7 +124,7 @@ If you have a computer on the same Wi-Fi network as your TV:
 
 ### 📲 Method 4: Using the "Downloader" App (AFTVnews)
 1. Install **Downloader** from the Google Play Store or Amazon Appstore on your TV.
-2. Open Downloader, enter the direct URL where you have hosted the APK (e.g. from your GitHub Releases page), and click **Go**.
+2. Open Downloader and enter the direct APK download link from the [GitHub Releases page](https://github.com/Josh9456/Manga-Comic-TV-Reader-/releases).
 3. Once downloaded, Downloader will prompt you to install the APK directly.
 
 ---
@@ -150,12 +154,12 @@ On first launch, Manga TV will request **All Files Access** (`MANAGE_EXTERNAL_ST
 ### In Reader View:
 | Button / Key | Manga Mode (RTL) | Comic Mode (LTR) | Webtoon Mode |
 | :--- | :--- | :--- | :--- |
-| **D-Pad Right (▶)** | Next Page | Previous Page | Fast Scroll Down |
-| **D-Pad Left (◀)** | Previous Page | Next Page | Fast Scroll Up |
-| **D-Pad Up (▲)** | Pan Page Up (in Fit Width) | Pan Page Up (in Fit Width) | Smooth Scroll Up |
-| **D-Pad Down (▼)** | Pan Page Down (in Fit Width) | Pan Page Down (in Fit Width) | Smooth Scroll Down |
+| **D-Pad Right (▶)** | Next Page / Pan Right | Previous Page / Pan Right | Fast Scroll Down |
+| **D-Pad Left (◀)** | Previous Page / Pan Left | Next Page / Pan Left | Fast Scroll Up |
+| **D-Pad Up (▲)** | Pan / Scroll Page Up | Pan / Scroll Page Up | Smooth Scroll Up |
+| **D-Pad Down (▼)** | Pan / Scroll Page Down | Pan / Scroll Page Down | Smooth Scroll Down |
 | **OK / Center Select** | Toggle On-Screen Display (OSD) | Toggle On-Screen Display (OSD) | Toggle On-Screen Display (OSD) |
-| **Back** | Exit to Library (Saves progress) | Exit to Library (Saves progress) | Exit to Library (Saves progress) |
+| **Back** | Reset Zoom/Pan / Exit to Library | Reset Zoom/Pan / Exit to Library | Reset Zoom/Pan / Exit to Library |
 | **Play / Pause** | Toggle Auto-Slideshow | Toggle Auto-Slideshow | Toggle Auto-Slideshow |
 | **Fast Forward (>>)** | Skip 10 Pages Forward | Skip 10 Pages Forward | Jump Down |
 | **Rewind (<<)** | Skip 10 Pages Backward | Skip 10 Pages Backward | Jump Up |
@@ -167,28 +171,6 @@ On first launch, Manga TV will request **All Files Access** (`MANAGE_EXTERNAL_ST
 | **OK / Center Select** | Open comic / Enter directory / Select item |
 | **Long Press OK / Info** | Open comic metadata drawer & details |
 | **Back** | Navigate up one folder directory level / Exit app |
-
----
-
-## 🛠️ Building From Source
-
-### Prerequisites
-* **Java Development Kit (JDK)**: Version 17 or higher
-* **Android SDK**: Build Tools 34.0.0+ / Android API 35
-* **Gradle**: 8.7+ (wrapper included)
-
-### Build Commands
-```bash
-# Clone the repository
-git clone git@github.com:Josh9456/Manga-Comic-TV-Reader-.git
-cd Manga-Comic-TV-Reader-
-
-# Build debug APK
-./gradlew assembleDebug
-
-# The built APK will be located at:
-# app/build/outputs/apk/debug/app-debug.apk
-```
 
 ---
 
