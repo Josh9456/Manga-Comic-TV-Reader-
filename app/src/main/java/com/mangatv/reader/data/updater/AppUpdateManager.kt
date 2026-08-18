@@ -124,8 +124,12 @@ object AppUpdateManager {
         onProgress: (Int) -> Unit
     ): Result<Unit> = withContext(Dispatchers.IO) {
         try {
-            val updatesDir = File(context.cacheDir, "updates").apply { mkdirs() }
-            val outputFile = File(updatesDir, fileName.ifEmpty { "MangaTV-update.apk" })
+            val baseDir = context.getExternalFilesDir(android.os.Environment.DIRECTORY_DOWNLOADS)
+                ?: File(context.cacheDir, "updates")
+            baseDir.mkdirs()
+
+            val cleanFileName = if (fileName.endsWith(".apk", ignoreCase = true)) fileName else "MangaTV-update.apk"
+            val outputFile = File(baseDir, cleanFileName)
 
             if (outputFile.exists()) {
                 outputFile.delete()
@@ -157,7 +161,7 @@ object AppUpdateManager {
                 }
             }
 
-            // Launch package installer
+            // Launch package installer on Main Thread
             withContext(Dispatchers.Main) {
                 installApk(context, outputFile)
             }
@@ -175,6 +179,14 @@ object AppUpdateManager {
             setDataAndType(apkUri, "application/vnd.android.package-archive")
             flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_GRANT_READ_URI_PERMISSION
         }
+
+        // Explicitly grant permissions to resolving package installers
+        val resInfoList = context.packageManager.queryIntentActivities(intent, PackageManager.MATCH_DEFAULT_ONLY)
+        for (resolveInfo in resInfoList) {
+            val packageName = resolveInfo.activityInfo.packageName
+            context.grantUriPermission(packageName, apkUri, Intent.FLAG_GRANT_READ_URI_PERMISSION)
+        }
+
         context.startActivity(intent)
     }
 }

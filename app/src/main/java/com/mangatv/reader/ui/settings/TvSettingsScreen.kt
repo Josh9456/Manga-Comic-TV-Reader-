@@ -107,107 +107,110 @@ fun TvSettingsScreen(
                                 "Current Version: v$currentVersion • Automatically checks for new APK updates from GitHub releases."
                             }
                     ) {
-                        when {
-                            isDownloadingUpdate -> {
-                                Column(horizontalAlignment = Alignment.End) {
-                                    Text(
-                                        text = "Downloading APK: $downloadProgress%",
-                                        style = MaterialTheme.typography.labelMedium.copy(
-                                            color = AccentCyan,
-                                            fontWeight = FontWeight.Bold
+                        Button(
+                            onClick = {
+                                if (isDownloadingUpdate || isCheckingUpdate) return@Button
+
+                                if (updateInfo?.isUpdateAvailable == true && updateInfo?.downloadUrl != null) {
+                                    val url = updateInfo?.downloadUrl ?: return@Button
+                                    val name = updateInfo?.apkFileName ?: "MangaTV-v${updateInfo?.latestVersion}.apk"
+                                    isDownloadingUpdate = true
+                                    downloadProgress = 0
+                                    updateStatusMessage = "Downloading APK update..."
+                                    coroutineScope.launch {
+                                        val result = AppUpdateManager.downloadAndInstallApk(
+                                            context = context,
+                                            downloadUrl = url,
+                                            fileName = name,
+                                            onProgress = { pct ->
+                                                downloadProgress = pct
+                                                updateStatusMessage = "Downloading APK: $pct%"
+                                            }
                                         )
-                                    )
-                                    Spacer(modifier = Modifier.height(4.dp))
-                                    Box(
-                                        modifier = Modifier
-                                            .width(180.dp)
-                                            .height(8.dp)
-                                            .background(CinemaSurfaceVariant, RoundedCornerShape(4.dp))
-                                    ) {
-                                        Box(
-                                            modifier = Modifier
-                                                .fillMaxWidth((downloadProgress / 100f).coerceIn(0f, 1f))
-                                                .height(8.dp)
-                                                .background(AccentCyan, RoundedCornerShape(4.dp))
-                                        )
+                                        isDownloadingUpdate = false
+                                        if (result.isFailure) {
+                                            updateStatusMessage = "Download failed: ${result.exceptionOrNull()?.localizedMessage}"
+                                        } else {
+                                            updateStatusMessage = "Installer launched! Please confirm installation on your TV."
+                                        }
+                                    }
+                                } else {
+                                    isCheckingUpdate = true
+                                    updateStatusMessage = "Checking GitHub Releases..."
+                                    coroutineScope.launch {
+                                        val result = AppUpdateManager.checkForUpdates(context)
+                                        isCheckingUpdate = false
+                                        result.onSuccess { info ->
+                                            updateInfo = info
+                                            if (info.isUpdateAvailable) {
+                                                updateStatusMessage = "Update found: v${info.latestVersion}! Click to install."
+                                            } else {
+                                                updateStatusMessage = "You are on the latest version (v$currentVersion)."
+                                            }
+                                        }.onFailure { error ->
+                                            updateStatusMessage = "Check failed: ${error.localizedMessage ?: "Network error"}"
+                                        }
                                     }
                                 }
-                            }
-                            updateInfo?.isUpdateAvailable == true && updateInfo?.downloadUrl != null -> {
-                                Button(
-                                    onClick = {
-                                        val url = updateInfo?.downloadUrl ?: return@Button
-                                        val name = updateInfo?.apkFileName ?: "MangaTV-v${updateInfo?.latestVersion}.apk"
-                                        isDownloadingUpdate = true
-                                        downloadProgress = 0
-                                        coroutineScope.launch {
-                                            val result = AppUpdateManager.downloadAndInstallApk(
-                                                context = context,
-                                                downloadUrl = url,
-                                                fileName = name,
-                                                onProgress = { pct -> downloadProgress = pct }
-                                            )
-                                            isDownloadingUpdate = false
-                                            if (result.isFailure) {
-                                                updateStatusMessage = "Download failed: ${result.exceptionOrNull()?.localizedMessage}"
-                                            }
-                                        }
-                                    },
-                                    colors = ButtonDefaults.colors(
-                                        containerColor = AccentCyan,
-                                        focusedContainerColor = AccentTeal
-                                    )
-                                ) {
-                                    Row(
-                                        verticalAlignment = Alignment.CenterVertically,
-                                        horizontalArrangement = Arrangement.spacedBy(6.dp)
-                                    ) {
-                                        Icon(Icons.Default.Download, contentDescription = null, tint = TextDark, modifier = Modifier.size(18.dp))
+                            },
+                            colors = ButtonDefaults.colors(
+                                containerColor = if (isDownloadingUpdate || updateInfo?.isUpdateAvailable == true) AccentCyan else CinemaSurfaceVariant,
+                                focusedContainerColor = AccentTeal
+                            )
+                        ) {
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(8.dp)
+                            ) {
+                                when {
+                                    isDownloadingUpdate -> {
+                                        Icon(
+                                            imageVector = Icons.Default.Download,
+                                            contentDescription = null,
+                                            tint = TextDark,
+                                            modifier = Modifier.size(18.dp)
+                                        )
+                                        Text(
+                                            text = "Downloading $downloadProgress%",
+                                            color = TextDark,
+                                            fontWeight = FontWeight.Bold
+                                        )
+                                    }
+                                    isCheckingUpdate -> {
+                                        Icon(
+                                            imageVector = Icons.Default.Refresh,
+                                            contentDescription = null,
+                                            tint = TextWhite,
+                                            modifier = Modifier.size(18.dp)
+                                        )
+                                        Text(
+                                            text = "Checking...",
+                                            color = TextWhite,
+                                            fontWeight = FontWeight.Bold
+                                        )
+                                    }
+                                    updateInfo?.isUpdateAvailable == true -> {
+                                        Icon(
+                                            imageVector = Icons.Default.Download,
+                                            contentDescription = null,
+                                            tint = TextDark,
+                                            modifier = Modifier.size(18.dp)
+                                        )
                                         Text(
                                             text = "Install v${updateInfo?.latestVersion}",
                                             color = TextDark,
                                             fontWeight = FontWeight.Bold
                                         )
                                     }
-                                }
-                            }
-                            else -> {
-                                Button(
-                                    onClick = {
-                                        isCheckingUpdate = true
-                                        updateStatusMessage = "Checking GitHub Releases..."
-                                        coroutineScope.launch {
-                                            val result = AppUpdateManager.checkForUpdates(context)
-                                            isCheckingUpdate = false
-                                            result.onSuccess { info ->
-                                                updateInfo = info
-                                                if (info.isUpdateAvailable) {
-                                                    updateStatusMessage = "Update found: v${info.latestVersion}! Ready to install."
-                                                } else {
-                                                    updateStatusMessage = "You are on the latest version (v$currentVersion)."
-                                                }
-                                            }.onFailure { error ->
-                                                updateStatusMessage = "Check failed: ${error.localizedMessage ?: "Network error"}"
-                                            }
-                                        }
-                                    },
-                                    colors = ButtonDefaults.colors(
-                                        containerColor = CinemaSurfaceVariant,
-                                        focusedContainerColor = AccentCyan
-                                    )
-                                ) {
-                                    Row(
-                                        verticalAlignment = Alignment.CenterVertically,
-                                        horizontalArrangement = Arrangement.spacedBy(6.dp)
-                                    ) {
+                                    else -> {
                                         Icon(
-                                            imageVector = if (isCheckingUpdate) Icons.Default.Refresh else Icons.Default.SystemUpdate,
+                                            imageVector = Icons.Default.SystemUpdate,
                                             contentDescription = null,
                                             tint = TextWhite,
                                             modifier = Modifier.size(18.dp)
                                         )
                                         Text(
-                                            text = if (isCheckingUpdate) "Checking..." else "Check for Updates",
+                                            text = "Check for Updates",
                                             color = TextWhite,
                                             fontWeight = FontWeight.Bold
                                         )
