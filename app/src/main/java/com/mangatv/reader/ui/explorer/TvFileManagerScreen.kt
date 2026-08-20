@@ -1,5 +1,6 @@
 package com.mangatv.reader.ui.explorer
 
+import android.view.KeyEvent
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.interaction.MutableInteractionSource
@@ -23,6 +24,8 @@ import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.KeyboardActions
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.CircularProgressIndicator
 import androidx.compose.material.OutlinedTextField
 import androidx.compose.material.TextFieldDefaults
@@ -56,7 +59,11 @@ import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.input.key.onPreviewKeyEvent
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.ImeAction
+import androidx.compose.ui.text.input.PasswordVisualTransformation
+import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -884,6 +891,85 @@ private fun FileItemCard(
 }
 
 @Composable
+private fun TvInputField(
+    value: String,
+    onValueChange: (String) -> Unit,
+    label: String,
+    focusRequester: FocusRequester,
+    modifier: Modifier = Modifier,
+    isPassword: Boolean = false,
+    onDown: (() -> Unit)? = null,
+    onUp: (() -> Unit)? = null,
+    onLeft: (() -> Unit)? = null,
+    onRight: (() -> Unit)? = null,
+    onDone: (() -> Unit)? = null
+) {
+    val interactionSource = remember { MutableInteractionSource() }
+    val isFocused by interactionSource.collectIsFocusedAsState()
+
+    OutlinedTextField(
+        value = value,
+        onValueChange = onValueChange,
+        label = { androidx.compose.material.Text(label, color = if (isFocused) AccentCyan else TextMuted) },
+        singleLine = true,
+        visualTransformation = if (isPassword) PasswordVisualTransformation() else VisualTransformation.None,
+        keyboardOptions = KeyboardOptions(
+            imeAction = if (onDone != null) ImeAction.Done else ImeAction.Next
+        ),
+        keyboardActions = KeyboardActions(
+            onNext = { onDown?.invoke() ?: onRight?.invoke() },
+            onDone = { onDone?.invoke() }
+        ),
+        interactionSource = interactionSource,
+        modifier = modifier
+            .focusRequester(focusRequester)
+            .onPreviewKeyEvent { keyEvent ->
+                if (keyEvent.nativeKeyEvent.action == KeyEvent.ACTION_DOWN) {
+                    when (keyEvent.nativeKeyEvent.keyCode) {
+                        KeyEvent.KEYCODE_DPAD_DOWN -> {
+                            if (onDown != null) {
+                                onDown()
+                                true
+                            } else false
+                        }
+                        KeyEvent.KEYCODE_DPAD_UP -> {
+                            if (onUp != null) {
+                                onUp()
+                                true
+                            } else false
+                        }
+                        KeyEvent.KEYCODE_DPAD_LEFT -> {
+                            if (onLeft != null) {
+                                onLeft()
+                                true
+                            } else false
+                        }
+                        KeyEvent.KEYCODE_DPAD_RIGHT -> {
+                            if (onRight != null) {
+                                onRight()
+                                true
+                            } else false
+                        }
+                        else -> false
+                    }
+                } else false
+            }
+            .border(
+                width = if (isFocused) 2.5.dp else 1.dp,
+                color = if (isFocused) AccentCyan else Color(0x44FFFFFF),
+                shape = RoundedCornerShape(8.dp)
+            ),
+        colors = TextFieldDefaults.outlinedTextFieldColors(
+            textColor = TextWhite,
+            focusedBorderColor = Color.Transparent,
+            unfocusedBorderColor = Color.Transparent,
+            backgroundColor = if (isFocused) CinemaSurfaceVariant.copy(alpha = 0.9f) else CinemaSurfaceVariant,
+            cursorColor = AccentCyan
+        )
+    )
+}
+
+@Composable
 private fun LinkSmbDialog(
     isOpen: Boolean,
     isConnecting: Boolean,
@@ -893,7 +979,15 @@ private fun LinkSmbDialog(
 ) {
     if (!isOpen) return
 
-    val addressFocusRequester = remember { FocusRequester() }
+    val addressFR = remember { FocusRequester() }
+    val shareNameFR = remember { FocusRequester() }
+    val displayNameFR = remember { FocusRequester() }
+    val usernameFR = remember { FocusRequester() }
+    val passwordFR = remember { FocusRequester() }
+    val closeBtnFR = remember { FocusRequester() }
+    val cancelBtnFR = remember { FocusRequester() }
+    val connectBtnFR = remember { FocusRequester() }
+
     var address by remember { mutableStateOf("") }
     var shareName by remember { mutableStateOf("") }
     var username by remember { mutableStateOf("") }
@@ -903,7 +997,7 @@ private fun LinkSmbDialog(
     LaunchedEffect(isOpen) {
         delay(150)
         try {
-            addressFocusRequester.requestFocus()
+            addressFR.requestFocus()
         } catch (e: Exception) {
             // ignore
         }
@@ -912,7 +1006,7 @@ private fun LinkSmbDialog(
     Dialog(
         onDismissRequest = onDismiss,
         properties = DialogProperties(
-            dismissOnBackPress = true,
+            dismissOnBackPress = false,
             dismissOnClickOutside = false,
             usePlatformDefaultWidth = false
         )
@@ -920,12 +1014,20 @@ private fun LinkSmbDialog(
         Box(
             modifier = Modifier
                 .fillMaxSize()
-                .background(Color(0xCC000000)),
+                .background(Color(0xCC000000))
+                .onPreviewKeyEvent { event ->
+                    if (event.nativeKeyEvent.action == KeyEvent.ACTION_DOWN &&
+                        (event.nativeKeyEvent.keyCode == KeyEvent.KEYCODE_BACK || event.nativeKeyEvent.keyCode == KeyEvent.KEYCODE_ESCAPE)
+                    ) {
+                        onDismiss()
+                        true
+                    } else false
+                },
             contentAlignment = Alignment.Center
         ) {
             Column(
                 modifier = Modifier
-                    .width(500.dp)
+                    .width(520.dp)
                     .background(CinemaSurface, RoundedCornerShape(16.dp))
                     .padding(24.dp),
                 verticalArrangement = Arrangement.spacedBy(12.dp)
@@ -951,6 +1053,14 @@ private fun LinkSmbDialog(
                     }
                     Button(
                         onClick = onDismiss,
+                        modifier = Modifier
+                            .focusRequester(closeBtnFR)
+                            .onPreviewKeyEvent { event ->
+                                if (event.nativeKeyEvent.action == KeyEvent.ACTION_DOWN && event.nativeKeyEvent.keyCode == KeyEvent.KEYCODE_DPAD_DOWN) {
+                                    addressFR.requestFocus()
+                                    true
+                                } else false
+                            },
                         colors = ButtonDefaults.colors(
                             containerColor = CinemaSurfaceVariant,
                             focusedContainerColor = AccentOrange
@@ -965,85 +1075,72 @@ private fun LinkSmbDialog(
                     style = MaterialTheme.typography.bodyMedium.copy(color = TextMuted, fontSize = 13.sp)
                 )
 
-                OutlinedTextField(
+                // 1. Server / Share Address (Top row full-width)
+                TvInputField(
                     value = address,
                     onValueChange = { address = it },
-                    label = { androidx.compose.material.Text("Server / Share Address *", color = TextMuted) },
-                    singleLine = true,
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .focusRequester(addressFocusRequester),
-                    colors = TextFieldDefaults.outlinedTextFieldColors(
-                        textColor = TextWhite,
-                        focusedBorderColor = AccentCyan,
-                        unfocusedBorderColor = Color(0x44FFFFFF),
-                        backgroundColor = CinemaSurfaceVariant
-                    )
+                    label = "Server / Share Address *",
+                    focusRequester = addressFR,
+                    modifier = Modifier.fillMaxWidth(),
+                    onUp = { closeBtnFR.requestFocus() },
+                    onDown = { shareNameFR.requestFocus() }
                 )
 
+                // 2. Share Name & Display Name (Row 2)
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
-                    OutlinedTextField(
+                    TvInputField(
                         value = shareName,
                         onValueChange = { shareName = it },
-                        label = { androidx.compose.material.Text("Share Name (opt)", color = TextMuted) },
-                        singleLine = true,
+                        label = "Share Name (opt)",
+                        focusRequester = shareNameFR,
                         modifier = Modifier.weight(1f),
-                        colors = TextFieldDefaults.outlinedTextFieldColors(
-                            textColor = TextWhite,
-                            focusedBorderColor = AccentCyan,
-                            unfocusedBorderColor = Color(0x44FFFFFF),
-                            backgroundColor = CinemaSurfaceVariant
-                        )
+                        onUp = { addressFR.requestFocus() },
+                        onRight = { displayNameFR.requestFocus() },
+                        onDown = { usernameFR.requestFocus() }
                     )
 
-                    OutlinedTextField(
+                    TvInputField(
                         value = displayName,
                         onValueChange = { displayName = it },
-                        label = { androidx.compose.material.Text("Display Name (opt)", color = TextMuted) },
-                        singleLine = true,
+                        label = "Display Name (opt)",
+                        focusRequester = displayNameFR,
                         modifier = Modifier.weight(1f),
-                        colors = TextFieldDefaults.outlinedTextFieldColors(
-                            textColor = TextWhite,
-                            focusedBorderColor = AccentCyan,
-                            unfocusedBorderColor = Color(0x44FFFFFF),
-                            backgroundColor = CinemaSurfaceVariant
-                        )
+                        onUp = { addressFR.requestFocus() },
+                        onLeft = { shareNameFR.requestFocus() },
+                        onDown = { passwordFR.requestFocus() }
                     )
                 }
 
+                // 3. Username & Password (Row 3)
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
-                    OutlinedTextField(
+                    TvInputField(
                         value = username,
                         onValueChange = { username = it },
-                        label = { androidx.compose.material.Text("Username (opt)", color = TextMuted) },
-                        singleLine = true,
+                        label = "Username (opt)",
+                        focusRequester = usernameFR,
                         modifier = Modifier.weight(1f),
-                        colors = TextFieldDefaults.outlinedTextFieldColors(
-                            textColor = TextWhite,
-                            focusedBorderColor = AccentCyan,
-                            unfocusedBorderColor = Color(0x44FFFFFF),
-                            backgroundColor = CinemaSurfaceVariant
-                        )
+                        onUp = { shareNameFR.requestFocus() },
+                        onRight = { passwordFR.requestFocus() },
+                        onDown = { cancelBtnFR.requestFocus() }
                     )
 
-                    OutlinedTextField(
+                    TvInputField(
                         value = password,
                         onValueChange = { password = it },
-                        label = { androidx.compose.material.Text("Password (opt)", color = TextMuted) },
-                        singleLine = true,
+                        label = "Password (opt)",
+                        focusRequester = passwordFR,
                         modifier = Modifier.weight(1f),
-                        colors = TextFieldDefaults.outlinedTextFieldColors(
-                            textColor = TextWhite,
-                            focusedBorderColor = AccentCyan,
-                            unfocusedBorderColor = Color(0x44FFFFFF),
-                            backgroundColor = CinemaSurfaceVariant
-                        )
+                        isPassword = true,
+                        onUp = { displayNameFR.requestFocus() },
+                        onLeft = { usernameFR.requestFocus() },
+                        onDown = { connectBtnFR.requestFocus() },
+                        onDone = { connectBtnFR.requestFocus() }
                     )
                 }
 
@@ -1056,6 +1153,7 @@ private fun LinkSmbDialog(
 
                 Spacer(modifier = Modifier.height(4.dp))
 
+                // 4. Action Buttons (Row 4)
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.End,
@@ -1063,6 +1161,23 @@ private fun LinkSmbDialog(
                 ) {
                     Button(
                         onClick = onDismiss,
+                        modifier = Modifier
+                            .focusRequester(cancelBtnFR)
+                            .onPreviewKeyEvent { event ->
+                                if (event.nativeKeyEvent.action == KeyEvent.ACTION_DOWN) {
+                                    when (event.nativeKeyEvent.keyCode) {
+                                        KeyEvent.KEYCODE_DPAD_UP -> {
+                                            usernameFR.requestFocus()
+                                            true
+                                        }
+                                        KeyEvent.KEYCODE_DPAD_RIGHT -> {
+                                            connectBtnFR.requestFocus()
+                                            true
+                                        }
+                                        else -> false
+                                    }
+                                } else false
+                            },
                         colors = ButtonDefaults.colors(
                             containerColor = CinemaSurfaceVariant,
                             focusedContainerColor = AccentCyan
@@ -1078,6 +1193,23 @@ private fun LinkSmbDialog(
                             onConnect(address, shareName, username, password, displayName)
                         },
                         enabled = !isConnecting && address.isNotBlank(),
+                        modifier = Modifier
+                            .focusRequester(connectBtnFR)
+                            .onPreviewKeyEvent { event ->
+                                if (event.nativeKeyEvent.action == KeyEvent.ACTION_DOWN) {
+                                    when (event.nativeKeyEvent.keyCode) {
+                                        KeyEvent.KEYCODE_DPAD_UP -> {
+                                            passwordFR.requestFocus()
+                                            true
+                                        }
+                                        KeyEvent.KEYCODE_DPAD_LEFT -> {
+                                            cancelBtnFR.requestFocus()
+                                            true
+                                        }
+                                        else -> false
+                                    }
+                                } else false
+                            },
                         colors = ButtonDefaults.colors(
                             containerColor = AccentCyan,
                             focusedContainerColor = AccentTeal
