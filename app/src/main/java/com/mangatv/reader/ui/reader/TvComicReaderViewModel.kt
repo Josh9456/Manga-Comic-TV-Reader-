@@ -121,6 +121,7 @@ class TvComicReaderViewModel(application: Application) : AndroidViewModel(applic
                 }
             }
 
+            val (initX, initY) = getInitialPanForNewPage()
             _uiState.value = _uiState.value.copy(
                 title = comicInfo?.title ?: file.nameWithoutExtension,
                 currentPageIndex = initialIndex,
@@ -130,6 +131,8 @@ class TvComicReaderViewModel(application: Application) : AndroidViewModel(applic
                 spreadMode = initialSpread,
                 comicInfo = comicInfo,
                 nextVolumePath = nextFile,
+                panOffsetX = initX,
+                panOffsetY = initY,
                 isLoading = false
             )
 
@@ -163,9 +166,7 @@ class TvComicReaderViewModel(application: Application) : AndroidViewModel(applic
             _uiState.value = _uiState.value.copy(
                 currentBitmap = bitmap1,
                 secondaryBitmap = null,
-                isCurrentSpreadDual = false,
-                panOffsetY = 0f,
-                panOffsetX = 0f
+                isCurrentSpreadDual = false
             )
             return
         }
@@ -176,9 +177,7 @@ class TvComicReaderViewModel(application: Application) : AndroidViewModel(applic
             _uiState.value = _uiState.value.copy(
                 currentBitmap = bitmap1,
                 secondaryBitmap = null,
-                isCurrentSpreadDual = false,
-                panOffsetY = 0f,
-                panOffsetX = 0f
+                isCurrentSpreadDual = false
             )
             return
         }
@@ -188,9 +187,7 @@ class TvComicReaderViewModel(application: Application) : AndroidViewModel(applic
             _uiState.value = _uiState.value.copy(
                 currentBitmap = bitmap1,
                 secondaryBitmap = null,
-                isCurrentSpreadDual = false,
-                panOffsetY = 0f,
-                panOffsetX = 0f
+                isCurrentSpreadDual = false
             )
             return
         }
@@ -203,9 +200,7 @@ class TvComicReaderViewModel(application: Application) : AndroidViewModel(applic
                 _uiState.value = _uiState.value.copy(
                     currentBitmap = bitmap1,
                     secondaryBitmap = null,
-                    isCurrentSpreadDual = false,
-                    panOffsetY = 0f,
-                    panOffsetX = 0f
+                    isCurrentSpreadDual = false
                 )
             } else {
                 if (bitmap2 != null && _uiState.value.isAutoCropEnabled) {
@@ -214,9 +209,7 @@ class TvComicReaderViewModel(application: Application) : AndroidViewModel(applic
                 _uiState.value = _uiState.value.copy(
                     currentBitmap = bitmap1,
                     secondaryBitmap = bitmap2,
-                    isCurrentSpreadDual = true,
-                    panOffsetY = 0f,
-                    panOffsetX = 0f
+                    isCurrentSpreadDual = true
                 )
             }
         } else {
@@ -224,9 +217,7 @@ class TvComicReaderViewModel(application: Application) : AndroidViewModel(applic
             _uiState.value = _uiState.value.copy(
                 currentBitmap = bitmap1,
                 secondaryBitmap = null,
-                isCurrentSpreadDual = false,
-                panOffsetY = 0f,
-                panOffsetX = 0f
+                isCurrentSpreadDual = false
             )
         }
     }
@@ -361,10 +352,11 @@ class TvComicReaderViewModel(application: Application) : AndroidViewModel(applic
     fun setZoomScale(scale: Float) {
         resetIdleTimer()
         val clamped = scale.coerceIn(1.0f, 3.0f)
+        val (initX, initY) = getInitialPanForNewPage()
         if (clamped == 1.0f) {
             _uiState.value = _uiState.value.copy(zoomScale = clamped, panOffsetX = 0f, panOffsetY = 0f)
         } else {
-            _uiState.value = _uiState.value.copy(zoomScale = clamped)
+            _uiState.value = _uiState.value.copy(zoomScale = clamped, panOffsetX = initX, panOffsetY = initY)
         }
     }
 

@@ -43,6 +43,7 @@ import androidx.compose.material.icons.filled.RadioButtonUnchecked
 import androidx.compose.material.icons.filled.Storage
 import androidx.compose.material.icons.filled.Usb
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -51,12 +52,16 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.window.Dialog
+import androidx.compose.ui.window.DialogProperties
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.tv.material3.Button
 import androidx.tv.material3.ButtonDefaults
@@ -80,6 +85,7 @@ import com.mangatv.reader.ui.theme.CinemaSurfaceVariant
 import com.mangatv.reader.ui.theme.TextDark
 import com.mangatv.reader.ui.theme.TextMuted
 import com.mangatv.reader.ui.theme.TextWhite
+import kotlinx.coroutines.delay
 import java.io.File
 
 @Composable
@@ -563,57 +569,78 @@ fun TvFileManagerScreen(
             // Unlink SMB Share Confirmation Dialog
             if (smbShareToDelete != null) {
                 val share = smbShareToDelete!!
-                Box(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .background(Color(0xAA000000)),
-                    contentAlignment = Alignment.Center
+                val unlinkFocusRequester = remember { FocusRequester() }
+
+                LaunchedEffect(share) {
+                    delay(150)
+                    try {
+                        unlinkFocusRequester.requestFocus()
+                    } catch (e: Exception) {
+                        // ignore
+                    }
+                }
+
+                Dialog(
+                    onDismissRequest = { smbShareToDelete = null },
+                    properties = DialogProperties(
+                        dismissOnBackPress = true,
+                        dismissOnClickOutside = false,
+                        usePlatformDefaultWidth = false
+                    )
                 ) {
-                    Column(
-                        horizontalAlignment = Alignment.CenterHorizontally,
-                        verticalArrangement = Arrangement.spacedBy(16.dp),
+                    Box(
                         modifier = Modifier
-                            .width(420.dp)
-                            .background(CinemaSurface, RoundedCornerShape(16.dp))
-                            .padding(24.dp)
+                            .fillMaxSize()
+                            .background(Color(0xAA000000)),
+                        contentAlignment = Alignment.Center
                     ) {
-                        Text(
-                            text = "Unlink SMB Share?",
-                            style = MaterialTheme.typography.titleMedium.copy(
-                                fontWeight = FontWeight.Bold,
-                                color = TextWhite,
-                                fontSize = 18.sp
-                            )
-                        )
-                        Text(
-                            text = "Remove \"${share.displayName}\" (${share.host}/${share.shareName}) from your saved shares?",
-                            style = MaterialTheme.typography.bodyMedium.copy(color = TextMuted),
-                            textAlign = androidx.compose.ui.text.style.TextAlign.Center
-                        )
-                        Row(
-                            horizontalArrangement = Arrangement.spacedBy(16.dp),
-                            verticalAlignment = Alignment.CenterVertically
+                        Column(
+                            horizontalAlignment = Alignment.CenterHorizontally,
+                            verticalArrangement = Arrangement.spacedBy(16.dp),
+                            modifier = Modifier
+                                .width(420.dp)
+                                .background(CinemaSurface, RoundedCornerShape(16.dp))
+                                .padding(24.dp)
                         ) {
-                            Button(
-                                onClick = {
-                                    viewModel.removeSmbShare(share)
-                                    smbShareToDelete = null
-                                },
-                                colors = ButtonDefaults.colors(
-                                    containerColor = AccentOrange,
-                                    focusedContainerColor = AccentCyan
+                            Text(
+                                text = "Unlink SMB Share?",
+                                style = MaterialTheme.typography.titleMedium.copy(
+                                    fontWeight = FontWeight.Bold,
+                                    color = TextWhite,
+                                    fontSize = 18.sp
                                 )
+                            )
+                            Text(
+                                text = "Remove \"${share.displayName}\" (${share.host}/${share.shareName}) from your saved shares?",
+                                style = MaterialTheme.typography.bodyMedium.copy(color = TextMuted),
+                                textAlign = androidx.compose.ui.text.style.TextAlign.Center
+                            )
+                            Row(
+                                horizontalArrangement = Arrangement.spacedBy(16.dp),
+                                verticalAlignment = Alignment.CenterVertically
                             ) {
-                                Text("Unlink", color = TextDark, fontWeight = FontWeight.Bold)
-                            }
-                            Button(
-                                onClick = { smbShareToDelete = null },
-                                colors = ButtonDefaults.colors(
-                                    containerColor = CinemaSurfaceVariant,
-                                    focusedContainerColor = AccentCyan
-                                )
-                            ) {
-                                Text("Cancel", color = TextWhite)
+                                Button(
+                                    onClick = {
+                                        viewModel.removeSmbShare(share)
+                                        smbShareToDelete = null
+                                    },
+                                    modifier = Modifier.focusRequester(unlinkFocusRequester),
+                                    colors = ButtonDefaults.colors(
+                                        containerColor = AccentOrange,
+                                        focusedContainerColor = AccentCyan
+                                    )
+                                ) {
+                                    Text("Unlink", color = TextDark, fontWeight = FontWeight.Bold)
+                                }
+                                Button(
+                                    onClick = { smbShareToDelete = null },
+                                    colors = ButtonDefaults.colors(
+                                        containerColor = CinemaSurfaceVariant,
+                                        focusedContainerColor = AccentCyan
+                                    )
+                                ) {
+                                    Text("Cancel", color = TextWhite)
+                                }
                             }
                         }
                     }
@@ -866,190 +893,211 @@ private fun LinkSmbDialog(
 ) {
     if (!isOpen) return
 
+    val addressFocusRequester = remember { FocusRequester() }
     var address by remember { mutableStateOf("") }
     var shareName by remember { mutableStateOf("") }
     var username by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
     var displayName by remember { mutableStateOf("") }
 
-    Box(
-        modifier = Modifier
-            .fillMaxSize()
-            .background(Color(0xCC000000)),
-        contentAlignment = Alignment.Center
+    LaunchedEffect(isOpen) {
+        delay(150)
+        try {
+            addressFocusRequester.requestFocus()
+        } catch (e: Exception) {
+            // ignore
+        }
+    }
+
+    Dialog(
+        onDismissRequest = onDismiss,
+        properties = DialogProperties(
+            dismissOnBackPress = true,
+            dismissOnClickOutside = false,
+            usePlatformDefaultWidth = false
+        )
     ) {
-        Column(
+        Box(
             modifier = Modifier
-                .width(480.dp)
-                .background(CinemaSurface, RoundedCornerShape(16.dp))
-                .padding(24.dp),
-            verticalArrangement = Arrangement.spacedBy(12.dp)
+                .fillMaxSize()
+                .background(Color(0xCC000000)),
+            contentAlignment = Alignment.Center
         ) {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
+            Column(
+                modifier = Modifier
+                    .width(500.dp)
+                    .background(CinemaSurface, RoundedCornerShape(16.dp))
+                    .padding(24.dp),
+                verticalArrangement = Arrangement.spacedBy(12.dp)
             ) {
                 Row(
-                    verticalAlignment = Alignment.CenterVertically,
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        Icon(Icons.Default.Lan, contentDescription = null, tint = AccentCyan)
+                        Text(
+                            text = "Link SMB Share",
+                            style = MaterialTheme.typography.titleLarge.copy(
+                                fontWeight = FontWeight.Bold,
+                                color = TextWhite,
+                                fontSize = 20.sp
+                            )
+                        )
+                    }
+                    Button(
+                        onClick = onDismiss,
+                        colors = ButtonDefaults.colors(
+                            containerColor = CinemaSurfaceVariant,
+                            focusedContainerColor = AccentOrange
+                        )
+                    ) {
+                        Icon(Icons.Default.Close, contentDescription = "Close", tint = TextWhite)
+                    }
+                }
+
+                Text(
+                    text = "Enter network storage address (e.g. 192.168.1.100/Manga):",
+                    style = MaterialTheme.typography.bodyMedium.copy(color = TextMuted, fontSize = 13.sp)
+                )
+
+                OutlinedTextField(
+                    value = address,
+                    onValueChange = { address = it },
+                    label = { androidx.compose.material.Text("Server / Share Address *", color = TextMuted) },
+                    singleLine = true,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .focusRequester(addressFocusRequester),
+                    colors = TextFieldDefaults.outlinedTextFieldColors(
+                        textColor = TextWhite,
+                        focusedBorderColor = AccentCyan,
+                        unfocusedBorderColor = Color(0x44FFFFFF),
+                        backgroundColor = CinemaSurfaceVariant
+                    )
+                )
+
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
-                    Icon(Icons.Default.Lan, contentDescription = null, tint = AccentCyan)
-                    Text(
-                        text = "Link SMB Share",
-                        style = MaterialTheme.typography.titleLarge.copy(
-                            fontWeight = FontWeight.Bold,
-                            color = TextWhite,
-                            fontSize = 20.sp
+                    OutlinedTextField(
+                        value = shareName,
+                        onValueChange = { shareName = it },
+                        label = { androidx.compose.material.Text("Share Name (opt)", color = TextMuted) },
+                        singleLine = true,
+                        modifier = Modifier.weight(1f),
+                        colors = TextFieldDefaults.outlinedTextFieldColors(
+                            textColor = TextWhite,
+                            focusedBorderColor = AccentCyan,
+                            unfocusedBorderColor = Color(0x44FFFFFF),
+                            backgroundColor = CinemaSurfaceVariant
+                        )
+                    )
+
+                    OutlinedTextField(
+                        value = displayName,
+                        onValueChange = { displayName = it },
+                        label = { androidx.compose.material.Text("Display Name (opt)", color = TextMuted) },
+                        singleLine = true,
+                        modifier = Modifier.weight(1f),
+                        colors = TextFieldDefaults.outlinedTextFieldColors(
+                            textColor = TextWhite,
+                            focusedBorderColor = AccentCyan,
+                            unfocusedBorderColor = Color(0x44FFFFFF),
+                            backgroundColor = CinemaSurfaceVariant
                         )
                     )
                 }
-                Button(
-                    onClick = onDismiss,
-                    colors = ButtonDefaults.colors(
-                        containerColor = CinemaSurfaceVariant,
-                        focusedContainerColor = AccentOrange
-                    )
+
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
-                    Icon(Icons.Default.Close, contentDescription = "Close", tint = TextWhite)
-                }
-            }
-
-            Text(
-                text = "Enter network storage address (e.g. 192.168.1.100/Manga):",
-                style = MaterialTheme.typography.bodyMedium.copy(color = TextMuted, fontSize = 13.sp)
-            )
-
-            OutlinedTextField(
-                value = address,
-                onValueChange = { address = it },
-                label = { androidx.compose.material.Text("Server / Share Address *", color = TextMuted) },
-                singleLine = true,
-                modifier = Modifier.fillMaxWidth(),
-                colors = TextFieldDefaults.outlinedTextFieldColors(
-                    textColor = TextWhite,
-                    focusedBorderColor = AccentCyan,
-                    unfocusedBorderColor = Color(0x44FFFFFF),
-                    backgroundColor = CinemaSurfaceVariant
-                )
-            )
-
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(8.dp)
-            ) {
-                OutlinedTextField(
-                    value = shareName,
-                    onValueChange = { shareName = it },
-                    label = { androidx.compose.material.Text("Share Name (opt)", color = TextMuted) },
-                    singleLine = true,
-                    modifier = Modifier.weight(1f),
-                    colors = TextFieldDefaults.outlinedTextFieldColors(
-                        textColor = TextWhite,
-                        focusedBorderColor = AccentCyan,
-                        unfocusedBorderColor = Color(0x44FFFFFF),
-                        backgroundColor = CinemaSurfaceVariant
+                    OutlinedTextField(
+                        value = username,
+                        onValueChange = { username = it },
+                        label = { androidx.compose.material.Text("Username (opt)", color = TextMuted) },
+                        singleLine = true,
+                        modifier = Modifier.weight(1f),
+                        colors = TextFieldDefaults.outlinedTextFieldColors(
+                            textColor = TextWhite,
+                            focusedBorderColor = AccentCyan,
+                            unfocusedBorderColor = Color(0x44FFFFFF),
+                            backgroundColor = CinemaSurfaceVariant
+                        )
                     )
-                )
 
-                OutlinedTextField(
-                    value = displayName,
-                    onValueChange = { displayName = it },
-                    label = { androidx.compose.material.Text("Display Name (opt)", color = TextMuted) },
-                    singleLine = true,
-                    modifier = Modifier.weight(1f),
-                    colors = TextFieldDefaults.outlinedTextFieldColors(
-                        textColor = TextWhite,
-                        focusedBorderColor = AccentCyan,
-                        unfocusedBorderColor = Color(0x44FFFFFF),
-                        backgroundColor = CinemaSurfaceVariant
+                    OutlinedTextField(
+                        value = password,
+                        onValueChange = { password = it },
+                        label = { androidx.compose.material.Text("Password (opt)", color = TextMuted) },
+                        singleLine = true,
+                        modifier = Modifier.weight(1f),
+                        colors = TextFieldDefaults.outlinedTextFieldColors(
+                            textColor = TextWhite,
+                            focusedBorderColor = AccentCyan,
+                            unfocusedBorderColor = Color(0x44FFFFFF),
+                            backgroundColor = CinemaSurfaceVariant
+                        )
                     )
-                )
-            }
-
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(8.dp)
-            ) {
-                OutlinedTextField(
-                    value = username,
-                    onValueChange = { username = it },
-                    label = { androidx.compose.material.Text("Username (opt)", color = TextMuted) },
-                    singleLine = true,
-                    modifier = Modifier.weight(1f),
-                    colors = TextFieldDefaults.outlinedTextFieldColors(
-                        textColor = TextWhite,
-                        focusedBorderColor = AccentCyan,
-                        unfocusedBorderColor = Color(0x44FFFFFF),
-                        backgroundColor = CinemaSurfaceVariant
-                    )
-                )
-
-                OutlinedTextField(
-                    value = password,
-                    onValueChange = { password = it },
-                    label = { androidx.compose.material.Text("Password (opt)", color = TextMuted) },
-                    singleLine = true,
-                    modifier = Modifier.weight(1f),
-                    colors = TextFieldDefaults.outlinedTextFieldColors(
-                        textColor = TextWhite,
-                        focusedBorderColor = AccentCyan,
-                        unfocusedBorderColor = Color(0x44FFFFFF),
-                        backgroundColor = CinemaSurfaceVariant
-                    )
-                )
-            }
-
-            if (errorMessage != null) {
-                Text(
-                    text = errorMessage,
-                    style = MaterialTheme.typography.bodySmall.copy(color = Color(0xFFFF6B6B), fontSize = 12.sp)
-                )
-            }
-
-            Spacer(modifier = Modifier.height(4.dp))
-
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.End,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Button(
-                    onClick = onDismiss,
-                    colors = ButtonDefaults.colors(
-                        containerColor = CinemaSurfaceVariant,
-                        focusedContainerColor = AccentCyan
-                    )
-                ) {
-                    Text("Cancel", color = TextWhite)
                 }
 
-                Spacer(modifier = Modifier.width(12.dp))
-
-                Button(
-                    onClick = {
-                        onConnect(address, shareName, username, password, displayName)
-                    },
-                    enabled = !isConnecting && address.isNotBlank(),
-                    colors = ButtonDefaults.colors(
-                        containerColor = AccentCyan,
-                        focusedContainerColor = AccentTeal
+                if (errorMessage != null) {
+                    Text(
+                        text = errorMessage,
+                        style = MaterialTheme.typography.bodySmall.copy(color = Color(0xFFFF6B6B), fontSize = 12.sp)
                     )
+                }
+
+                Spacer(modifier = Modifier.height(4.dp))
+
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.End,
+                    verticalAlignment = Alignment.CenterVertically
                 ) {
-                    if (isConnecting) {
-                        Row(
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(8.dp)
-                        ) {
-                            CircularProgressIndicator(
-                                modifier = Modifier.size(16.dp),
-                                color = TextDark,
-                                strokeWidth = 2.dp
-                            )
-                            Text("Connecting...", color = TextDark, fontWeight = FontWeight.Bold)
+                    Button(
+                        onClick = onDismiss,
+                        colors = ButtonDefaults.colors(
+                            containerColor = CinemaSurfaceVariant,
+                            focusedContainerColor = AccentCyan
+                        )
+                    ) {
+                        Text("Cancel", color = TextWhite)
+                    }
+
+                    Spacer(modifier = Modifier.width(12.dp))
+
+                    Button(
+                        onClick = {
+                            onConnect(address, shareName, username, password, displayName)
+                        },
+                        enabled = !isConnecting && address.isNotBlank(),
+                        colors = ButtonDefaults.colors(
+                            containerColor = AccentCyan,
+                            focusedContainerColor = AccentTeal
+                        )
+                    ) {
+                        if (isConnecting) {
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(8.dp)
+                            ) {
+                                CircularProgressIndicator(
+                                    modifier = Modifier.size(16.dp),
+                                    color = TextDark,
+                                    strokeWidth = 2.dp
+                                )
+                                Text("Connecting...", color = TextDark, fontWeight = FontWeight.Bold)
+                            }
+                        } else {
+                            Text("Connect & Link", color = TextDark, fontWeight = FontWeight.Bold)
                         }
-                    } else {
-                        Text("Connect & Link", color = TextDark, fontWeight = FontWeight.Bold)
                     }
                 }
             }

@@ -30,6 +30,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -176,17 +177,24 @@ fun TvComicReaderScreen(
         val scrollStepY = screenHeightPx * 0.30f
         val scrollStepX = screenWidthPx * 0.30f
 
-        // Smooth animated pan and zoom values
-        val animatedPanX by animateFloatAsState(
-            targetValue = uiState.panOffsetX.coerceIn(-maxPanX, maxPanX),
-            animationSpec = spring(stiffness = Spring.StiffnessLow, dampingRatio = Spring.DampingRatioNoBouncy),
-            label = "panX"
-        )
-        val animatedPanY by animateFloatAsState(
-            targetValue = uiState.panOffsetY.coerceIn(-maxPanY, maxPanY),
-            animationSpec = spring(stiffness = Spring.StiffnessLow, dampingRatio = Spring.DampingRatioNoBouncy),
-            label = "panY"
-        )
+        val targetPanX = uiState.panOffsetX.coerceIn(-maxPanX, maxPanX)
+        val targetPanY = uiState.panOffsetY.coerceIn(-maxPanY, maxPanY)
+
+        // Smooth animated pan and zoom values with immediate page-turn snap
+        val animatedPanX by key(uiState.currentPageIndex) {
+            animateFloatAsState(
+                targetValue = targetPanX,
+                animationSpec = spring(stiffness = Spring.StiffnessMedium, dampingRatio = Spring.DampingRatioNoBouncy),
+                label = "panX"
+            )
+        }
+        val animatedPanY by key(uiState.currentPageIndex) {
+            animateFloatAsState(
+                targetValue = targetPanY,
+                animationSpec = spring(stiffness = Spring.StiffnessMedium, dampingRatio = Spring.DampingRatioNoBouncy),
+                label = "panY"
+            )
+        }
         val animatedZoom by animateFloatAsState(
             targetValue = uiState.zoomScale,
             animationSpec = tween(durationMillis = 200, easing = FastOutSlowInEasing),
