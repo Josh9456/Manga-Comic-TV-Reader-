@@ -231,6 +231,12 @@ class TvComicReaderViewModel(application: Application) : AndroidViewModel(applic
         }
     }
 
+    private fun getInitialPanForNewPage(): Pair<Float, Float> {
+        val initialX = if (_uiState.value.readingMode == ReadingMode.RTL) -Float.MAX_VALUE else Float.MAX_VALUE
+        val initialY = Float.MAX_VALUE
+        return Pair(initialX, initialY)
+    }
+
     fun nextPage() {
         resetIdleTimer()
         val current = _uiState.value.currentPageIndex
@@ -239,14 +245,15 @@ class TvComicReaderViewModel(application: Application) : AndroidViewModel(applic
 
         val step = if (isDual) 2 else 1
         val nextIndex = current + step
+        val (initX, initY) = getInitialPanForNewPage()
 
         if (nextIndex < total) {
             _uiState.value = _uiState.value.copy(
                 currentPageIndex = nextIndex,
                 isAtEndPromptVisible = false,
                 navDirection = NavDirection.FORWARD,
-                panOffsetX = 0f,
-                panOffsetY = 0f
+                panOffsetX = initX,
+                panOffsetY = initY
             )
             cacheEngine?.updateCurrentPosition(nextIndex, readingForward = true)
             loadCurrentBitmap(nextIndex)
@@ -258,8 +265,8 @@ class TvComicReaderViewModel(application: Application) : AndroidViewModel(applic
                 currentPageIndex = finalIndex,
                 isAtEndPromptVisible = false,
                 navDirection = NavDirection.FORWARD,
-                panOffsetX = 0f,
-                panOffsetY = 0f
+                panOffsetX = initX,
+                panOffsetY = initY
             )
             cacheEngine?.updateCurrentPosition(finalIndex, readingForward = true)
             loadCurrentBitmap(finalIndex)
@@ -290,12 +297,13 @@ class TvComicReaderViewModel(application: Application) : AndroidViewModel(applic
             current - 1
         }.coerceAtLeast(0)
 
+        val (initX, initY) = getInitialPanForNewPage()
         _uiState.value = _uiState.value.copy(
             currentPageIndex = prevIndex,
             isAtEndPromptVisible = false,
             navDirection = NavDirection.BACKWARD,
-            panOffsetX = 0f,
-            panOffsetY = 0f
+            panOffsetX = initX,
+            panOffsetY = initY
         )
         cacheEngine?.updateCurrentPosition(prevIndex, readingForward = false)
         loadCurrentBitmap(prevIndex)
@@ -308,12 +316,13 @@ class TvComicReaderViewModel(application: Application) : AndroidViewModel(applic
         val total = _uiState.value.totalPages
         val target = targetPage.coerceIn(0, total - 1)
         val dir = if (target > current) NavDirection.FORWARD else if (target < current) NavDirection.BACKWARD else NavDirection.NONE
+        val (initX, initY) = getInitialPanForNewPage()
         _uiState.value = _uiState.value.copy(
             currentPageIndex = target,
             isAtEndPromptVisible = false,
             navDirection = dir,
-            panOffsetX = 0f,
-            panOffsetY = 0f
+            panOffsetX = initX,
+            panOffsetY = initY
         )
         cacheEngine?.updateCurrentPosition(target)
         loadCurrentBitmap(target)
@@ -327,14 +336,16 @@ class TvComicReaderViewModel(application: Application) : AndroidViewModel(applic
     fun panVertical(deltaY: Float, maxPanY: Float = Float.MAX_VALUE) {
         resetIdleTimer()
         val currentY = _uiState.value.panOffsetY
-        val newY = (currentY + deltaY).coerceIn(-maxPanY, maxPanY)
+        val clampedCurrent = currentY.coerceIn(-maxPanY, maxPanY)
+        val newY = (clampedCurrent + deltaY).coerceIn(-maxPanY, maxPanY)
         _uiState.value = _uiState.value.copy(panOffsetY = newY)
     }
 
     fun panHorizontal(deltaX: Float, maxPanX: Float = Float.MAX_VALUE) {
         resetIdleTimer()
         val currentX = _uiState.value.panOffsetX
-        val newX = (currentX + deltaX).coerceIn(-maxPanX, maxPanX)
+        val clampedCurrent = currentX.coerceIn(-maxPanX, maxPanX)
+        val newX = (clampedCurrent + deltaX).coerceIn(-maxPanX, maxPanX)
         _uiState.value = _uiState.value.copy(panOffsetX = newX)
     }
 

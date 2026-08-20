@@ -6,6 +6,10 @@ object DecoderFactory {
 
     val SUPPORTED_ARCHIVE_EXTENSIONS = setOf("cbz", "zip", "cbr", "rar")
 
+    fun isSupportedExtension(ext: String): Boolean {
+        return SUPPORTED_ARCHIVE_EXTENSIONS.contains(ext.lowercase())
+    }
+
     fun isSupportedFile(file: File): Boolean {
         if (!file.exists()) return false
         if (file.isDirectory) {
@@ -13,7 +17,7 @@ object DecoderFactory {
             return children.any { ImageDecoderUtils.isImageFile(it.name) }
         }
         val ext = file.extension.lowercase()
-        return SUPPORTED_ARCHIVE_EXTENSIONS.contains(ext)
+        return isSupportedExtension(ext)
     }
 
     fun createDecoder(file: File): ComicArchiveDecoder? {

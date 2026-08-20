@@ -39,8 +39,8 @@ fun TvReadingBadge(
 
     val (text, bgColor, textColor) = when {
         isCompleted -> Triple("100% DONE", AccentTeal, TextDark)
-        currentPage > 0 && totalPages > 0 -> Triple("$percentage% • p. $currentPage/$totalPages", AccentOrange, TextDark)
-        currentPage > 0 -> Triple("p. $currentPage", AccentOrange, TextDark)
+        currentPage > 0 && totalPages > 0 -> Triple("$percentage% P: $currentPage/$totalPages", AccentOrange, TextDark)
+        currentPage > 0 -> Triple("P: $currentPage", AccentOrange, TextDark)
         else -> Triple("NEW", AccentCyan, TextDark)
     }
 

@@ -5,6 +5,7 @@ import android.os.Environment
 import androidx.core.content.ContextCompat
 import com.mangatv.reader.data.db.AppDatabase
 import com.mangatv.reader.data.db.entity.BookmarkedDirectoryEntity
+import com.mangatv.reader.data.db.entity.SmbShareEntity
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.withContext
@@ -22,6 +23,7 @@ class StorageRepository(private val context: Context) {
 
     private val db = AppDatabase.getInstance(context)
     private val bookmarkDao = db.bookmarkDao()
+    private val smbShareDao = db.smbShareDao()
 
     fun getAllBookmarks(): Flow<List<BookmarkedDirectoryEntity>> = bookmarkDao.getAllBookmarks()
 
@@ -42,6 +44,12 @@ class StorageRepository(private val context: Context) {
     }
 
     suspend fun isBookmarked(path: String): Boolean = bookmarkDao.isBookmarked(path)
+
+    fun getAllSmbShares(): Flow<List<SmbShareEntity>> = smbShareDao.getAllShares()
+
+    suspend fun addSmbShare(share: SmbShareEntity): Long = smbShareDao.insertShare(share)
+
+    suspend fun removeSmbShare(id: Long) = smbShareDao.deleteShare(id)
 
     suspend fun getAvailableDrives(): List<StorageDrive> = withContext(Dispatchers.IO) {
         val drives = mutableListOf<StorageDrive>()

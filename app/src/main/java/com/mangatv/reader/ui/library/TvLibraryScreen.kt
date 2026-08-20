@@ -536,7 +536,7 @@ private fun ComicMetadataDrawer(
                 )
             ) {
                 Text(
-                    text = if (comic.currentPage > 0) "Resume Reading (p. ${comic.currentPage})" else "Start Reading",
+                    text = if (comic.currentPage > 0) "Resume Reading (P: ${comic.currentPage})" else "Start Reading",
                     color = TextDark,
                     fontWeight = FontWeight.Bold
                 )

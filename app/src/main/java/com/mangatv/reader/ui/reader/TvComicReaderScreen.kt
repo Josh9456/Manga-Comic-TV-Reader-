@@ -30,7 +30,9 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clipToBounds
@@ -70,6 +72,13 @@ fun TvComicReaderScreen(
     val uiState by viewModel.uiState.collectAsState()
     val readerFocusRequester = remember { FocusRequester() }
     val osdFocusRequester = remember { FocusRequester() }
+    var isZoomBadgeVisible by remember { mutableStateOf(true) }
+
+    LaunchedEffect(uiState.aspectMode, uiState.zoomScale, filePath) {
+        isZoomBadgeVisible = true
+        kotlinx.coroutines.delay(3500)
+        isZoomBadgeVisible = false
+    }
 
     LaunchedEffect(filePath) {
         viewModel.openComic(filePath)
@@ -229,8 +238,8 @@ fun TvComicReaderScreen(
                             KeyEvent.KEYCODE_DPAD_LEFT -> {
                                 if (maxPanX > 10f) {
                                     if (uiState.readingMode == ReadingMode.RTL) {
-                                        if (uiState.panOffsetX > -maxPanX + 15f) {
-                                            viewModel.panHorizontal(-scrollStepX, maxPanX)
+                                        if (uiState.panOffsetX < maxPanX - 15f) {
+                                            viewModel.panHorizontal(scrollStepX, maxPanX)
                                         } else {
                                             viewModel.nextPage()
                                         }
@@ -254,8 +263,8 @@ fun TvComicReaderScreen(
                             KeyEvent.KEYCODE_DPAD_RIGHT -> {
                                 if (maxPanX > 10f) {
                                     if (uiState.readingMode == ReadingMode.RTL) {
-                                        if (uiState.panOffsetX < maxPanX - 15f) {
-                                            viewModel.panHorizontal(scrollStepX, maxPanX)
+                                        if (uiState.panOffsetX > -maxPanX + 15f) {
+                                            viewModel.panHorizontal(-scrollStepX, maxPanX)
                                         } else {
                                             viewModel.prevPage()
                                         }
@@ -379,11 +388,15 @@ fun TvComicReaderScreen(
                 }
             }
 
-            // Viewport / Zoom & Panning Position Badge Indicator
-            if (maxPanX > 10f || maxPanY > 10f || uiState.zoomScale > 1.0f) {
+            // Viewport / Zoom & Panning Position Badge Indicator (Auto-dismisses after 3.5s)
+            AnimatedVisibility(
+                visible = isZoomBadgeVisible && (maxPanX > 10f || maxPanY > 10f || uiState.zoomScale > 1.0f),
+                enter = fadeIn(tween(300)),
+                exit = fadeOut(tween(500)),
+                modifier = Modifier.align(Alignment.TopEnd)
+            ) {
                 Box(
                     modifier = Modifier
-                        .align(Alignment.TopEnd)
                         .padding(top = 24.dp, end = 24.dp)
                         .background(Color(0xAA111827), RoundedCornerShape(8.dp))
                         .padding(horizontal = 12.dp, vertical = 6.dp)

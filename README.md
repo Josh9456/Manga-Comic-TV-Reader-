@@ -53,9 +53,9 @@
 * **Local Storage Explorer**: Browse internal television storage and directories.
 * **USB & External Storage Auto-Detection**: Plug and play support for USB flash drives, SD cards, and external hard drives.
 * **Pinned Bookmarks**: Pin frequently used comic folders (e.g. `/USB/Manga/`) to your home sidebar for instant access.
-* **SMB (Samba / Windows Share v2/v3)**: Connect to your home NAS (Synology, TrueNAS, Unraid) or PC shared folders to stream archives across your local network without copying them to TV storage.
+* **SMB (Samba / Windows Share v2/v3)**: Easily link your home NAS (Synology, TrueNAS, Unraid) or PC shared folders directly from the Storage toolbar. Linked shares are remembered persistently and appear in your sidebar for one-click access and remote reading.
 * **Dynamic Cover Extraction**: Background decoders extract and cache front covers and `ComicInfo.xml` metadata on the fly.
-* **Reading Progress Tracking**: Visual state badges (`Unread`, `In Progress (Page X/Y)`, `Completed`) with automatic progress bookmarking and instant "Next Chapter / Volume" prompts when finishing a book.
+* **Reading Progress Tracking**: Visual state badges (`Unread`, `In Progress (% P: X/Y)`, `Completed`) with automatic progress bookmarking and instant "Next Chapter / Volume" prompts when finishing a book.
 * **🔄 One-Click In-App Updater**: Check for updates and download & install new releases directly from GitHub Releases without needing a computer or sideloading tools.
 
 ### 🎮 On-Screen Display (OSD)
@@ -158,7 +158,7 @@ On first launch, Manga TV will request **All Files Access** (`MANAGE_EXTERNAL_ST
                  └───────┬───────┘
  ┌───────────────┐       │       ┌───────────────┐
  │   LEFT (◀)    │─── [ OK ] ───│   RIGHT (▶)   │
- │ Prev/Next Pg  │  Toggle OSD   │ Next/Prev Pg  │
+ │ Next/Prev Pg  │  Toggle OSD   │ Prev/Next Pg  │
  └───────────────┘       │       └───────────────┘
                  ┌───────┴───────┐
                  │   DOWN (▼)    │  Pan Down / Zoom Out / Navigate Down
@@ -168,8 +168,8 @@ On first launch, Manga TV will request **All Files Access** (`MANAGE_EXTERNAL_ST
 ### In Reader View:
 | Button / Key | Manga Mode (RTL) | Comic Mode (LTR) | Webtoon Mode |
 | :--- | :--- | :--- | :--- |
-| **D-Pad Right (▶)** | Next Page / Pan Right | Previous Page / Pan Right | Fast Scroll Down |
-| **D-Pad Left (◀)** | Previous Page / Pan Left | Next Page / Pan Left | Fast Scroll Up |
+| **D-Pad Right (▶)** | Previous Page / Pan Right | Next Page / Pan Right | Fast Scroll Down |
+| **D-Pad Left (◀)** | Next Page / Pan Left | Previous Page / Pan Left | Fast Scroll Up |
 | **D-Pad Up (▲)** | Pan / Scroll Page Up | Pan / Scroll Page Up | Smooth Scroll Up |
 | **D-Pad Down (▼)** | Pan / Scroll Page Down | Pan / Scroll Page Down | Smooth Scroll Down |
 | **OK / Center Select** | Toggle On-Screen Display (OSD) | Toggle On-Screen Display (OSD) | Toggle On-Screen Display (OSD) |
